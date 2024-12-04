@@ -1,0 +1,198 @@
+//
+//  AuthManager.swift
+//  SpotifyClone
+//
+//  Created by stephen chacha on 04/12/2024.
+//
+import Foundation
+
+final class AuthManager {
+    static let shared = AuthManager()
+    
+    // MARK: - Constants
+    struct Constants {
+        static let clientID = "76a675416313462c92babb568e064676"
+        static let clientSecret = "25cb1fc758d14074be471a1c3cb45349" // Replace with your client secret
+        static let tokenAPIURL = "https://accounts.spotify.com/api/token"
+        static let redirectURI = "http://localhost:3000/callback" // Replace with your registered redirect URI
+        static let scopes = [
+            "user-read-private",
+            "user-read-email",
+            "playlist-read-private",
+            "playlist-modify-public",
+            "user-library-read",
+            "user-top-read",
+            "streaming"
+        ].joined(separator: " ")
+
+    }
+    
+    private init() {}
+    
+    // MARK: - Computed Property
+    var isSignedIn: Bool {
+        return accessToken != nil
+    }
+
+    
+    // MARK: - Variables
+    public var accessToken: String? {
+        return UserDefaults.standard.string(forKey: "access_token")
+    }
+    
+    private var refreshToken: String? {
+        return UserDefaults.standard.string(forKey: "refresh_token")
+    }
+    
+    private var tokenExpirationDate: Date? {
+        return UserDefaults.standard.object(forKey: "expiration_date") as? Date
+    }
+    
+    private var shouldRefreshToken: Bool {
+        guard let expirationDate = tokenExpirationDate else { return false }
+        let currentTime = Date()
+        let fiveMinutesBeforeExpiration = expirationDate.addingTimeInterval(-300) // 5 minutes early
+        return currentTime >= fiveMinutesBeforeExpiration
+    }
+    
+    
+    public var signInURL: URL? {
+        let base = "https://accounts.spotify.com/authorize"
+        
+        var components = URLComponents(string: base)
+        components?.queryItems = [
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "client_id", value: Constants.clientID),
+            URLQueryItem(name: "scope", value: Constants.scopes),
+            URLQueryItem(name: "redirect_uri", value: Constants.redirectURI),
+            URLQueryItem(name: "show_dialog", value: "TRUE")
+        ]
+        
+        return components?.url
+    }
+
+    
+    // MARK: - Exchange Code for Token
+    public func exchangeCodeForToken(code: String, completion: @escaping (Bool) -> Void) {
+        guard let url = URL(string: Constants.tokenAPIURL) else {
+            completion(false)
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let basicToken = "\(Constants.clientID):\(Constants.clientSecret)"
+        guard let basicData = basicToken.data(using: .utf8) else {
+            completion(false)
+            return
+        }
+        let base64String = basicData.base64EncodedString()
+        request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
+        
+        let bodyParameters = [
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": Constants.redirectURI
+        ]
+        request.httpBody = bodyParameters.map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+            .data(using: .utf8)
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
+            guard let data = data, error == nil else {
+                completion(false)
+                return
+            }
+            
+            do {
+                let result = try JSONDecoder().decode(AuthResponse.self, from: data)
+                self?.cacheToken(result: result)
+                completion(true)
+            } catch {
+                print("Error decoding token response: \(error.localizedDescription)")
+                completion(false)
+            }
+        }
+        task.resume()
+    }
+    
+    public func withvalidToken(completion: @escaping (String) -> Void){
+        if shouldRefreshToken {
+            refreshAccessToken { [weak self] success in
+                if let token = self?.accessToken , success {
+                        completion(token)
+                }
+            }
+        }
+        else if let token = accessToken {
+            completion(token)
+        }
+    }
+    
+    // MARK: - Refresh Token
+    public func refreshAccessToken(completion: @escaping (Bool) -> Void) {
+        guard shouldRefreshToken,
+              let refreshToken = self.refreshToken,
+              let url = URL(string: Constants.tokenAPIURL) else {
+            completion(false)
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let basicToken = "\(Constants.clientID):\(Constants.clientSecret)"
+        guard let basicData = basicToken.data(using: .utf8) else {
+            completion(false)
+            return
+        }
+        let base64String = basicData.base64EncodedString()
+        request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
+        
+        let bodyParameters = [
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken
+        ]
+        request.httpBody = bodyParameters.map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+            .data(using: .utf8)
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
+            guard let data = data, error == nil else {
+                completion(false)
+                return
+            }
+            
+            do {
+                let result = try JSONDecoder().decode(AuthResponse.self, from: data)
+                self?.cacheToken(result: result)
+                completion(true)
+            } catch {
+                print("Error decoding refresh token response: \(error.localizedDescription)")
+                completion(false)
+            }
+        }
+        task.resume()
+    }
+    
+    // MARK: - Cache Tokens
+    private func cacheToken(result: AuthResponse) {
+        UserDefaults.standard.set(result.access_token, forKey: "access_token")
+        if let refreshToken = result.refresh_token {
+            UserDefaults.standard.set(refreshToken, forKey: "refresh_token")
+        }
+        let expirationDate = Date().addingTimeInterval(TimeInterval(result.expires_in))
+        UserDefaults.standard.set(expirationDate, forKey: "expiration_date")
+    }
+}
+
+// MARK: - AuthResponse Model
+struct AuthResponse: Codable {
+    let access_token: String
+    let expires_in: Int
+    let refresh_token: String?
+    let scope: String
+    let token_type: String
+}
+
