@@ -11,7 +11,7 @@ class WelcomeViewController: UIViewController {
     
     private let signInButton: UIButton = {
         let button = UIButton()
-        button.backgroundColor = .white
+        button.backgroundColor = .blue
         button.setTitle("Sign In With Spotify", for: .normal)
         return button
     }()

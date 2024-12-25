@@ -8,6 +8,7 @@ import Foundation
 
 final class AuthManager {
     static let shared = AuthManager()
+    private var refreshingToken = false
     
     // MARK: - Constants
     struct Constants {
@@ -24,7 +25,7 @@ final class AuthManager {
             "user-top-read",
             "streaming"
         ].joined(separator: " ")
-
+        
     }
     
     private init() {}
@@ -33,7 +34,7 @@ final class AuthManager {
     var isSignedIn: Bool {
         return accessToken != nil
     }
-
+    
     
     // MARK: - Variables
     public var accessToken: String? {
@@ -54,6 +55,14 @@ final class AuthManager {
         let fiveMinutesBeforeExpiration = expirationDate.addingTimeInterval(-300) // 5 minutes early
         return currentTime >= fiveMinutesBeforeExpiration
     }
+
+    
+//    private var shouldRefreshToken: Bool {
+//        guard let expirationDate = tokenExpirationDate else { return false }
+//        let currentTime = Date()
+//        let fiveMinutesBeforeExpiration = expirationDate.addingTimeInterval(-300) // 5 minutes early
+//        return currentTime >= fiveMinutesBeforeExpiration
+//    }
     
     
     public var signInURL: URL? {
@@ -70,7 +79,7 @@ final class AuthManager {
         
         return components?.url
     }
-
+    
     
     // MARK: - Exchange Code for Token
     public func exchangeCodeForToken(code: String, completion: @escaping (Bool) -> Void) {
@@ -117,11 +126,17 @@ final class AuthManager {
         task.resume()
     }
     
+    private var onRefreshingBlocks = [((String) -> Void)]()
+    
     public func withvalidToken(completion: @escaping (String) -> Void){
+        guard !refreshingToken else {
+            onRefreshingBlocks.append(completion)
+            return
+        }
         if shouldRefreshToken {
             refreshAccessToken { [weak self] success in
                 if let token = self?.accessToken , success {
-                        completion(token)
+                    completion(token)
                 }
             }
         }
@@ -129,6 +144,64 @@ final class AuthManager {
             completion(token)
         }
     }
+    
+    
+    // MARK: - Refresh Token
+    public func refreshIfNeed(completion: @escaping (Bool) -> Void) {
+        guard !refreshingToken else { return }
+//        guard shouldRefreshToken,
+//              let refreshToken = self.refreshToken,
+//              let url = URL(string: Constants.tokenAPIURL) else {
+//            completion(false)
+//            return
+//        }
+        
+        guard let refreshToken = self.refreshToken else { return }
+        
+        guard let url = URL(string: Constants.tokenAPIURL) else { return }
+        
+        refreshingToken = true
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        let bodyParameters = [
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken
+        ]
+        request.httpBody = bodyParameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&").data(using: .utf8)
+
+        let basicToken = "\(Constants.clientID):\(Constants.clientSecret)"
+        guard let basicData = basicToken.data(using: .utf8) else {
+            completion(false)
+            return
+        }
+        let base64String = basicData.base64EncodedString()
+        request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
+
+        
+        
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
+            self?.refreshingToken = false
+            guard let data = data, error == nil else {
+                completion(false)
+                return
+            }
+            
+            do {
+                let result = try JSONDecoder().decode(AuthResponse.self, from: data)
+                self?.onRefreshingBlocks.forEach { $0(result.access_token)}
+                self?.onRefreshingBlocks.removeAll()
+                self?.cacheToken(result: result)
+                completion(true)
+            } catch {
+                print("Error decoding refresh token response: \(error.localizedDescription)")
+                completion(false)
+            }
+        }
+        task.resume()
+    }
+    
     
     // MARK: - Refresh Token
     public func refreshAccessToken(completion: @escaping (Bool) -> Void) {
@@ -178,12 +251,12 @@ final class AuthManager {
     
     // MARK: - Cache Tokens
     private func cacheToken(result: AuthResponse) {
-        UserDefaults.standard.set(result.access_token, forKey: "access_token")
+        UserDefaults.standard.setValue(result.access_token, forKey: "access_token")
         if let refreshToken = result.refresh_token {
-            UserDefaults.standard.set(refreshToken, forKey: "refresh_token")
+            UserDefaults.standard.setValue(refreshToken, forKey: "refresh_token")
         }
         let expirationDate = Date().addingTimeInterval(TimeInterval(result.expires_in))
-        UserDefaults.standard.set(expirationDate, forKey: "expiration_date")
+        UserDefaults.standard.setValue(expirationDate, forKey: "expiration_date")
     }
 }
 
@@ -196,3 +269,4 @@ struct AuthResponse: Codable {
     let token_type: String
 }
 
+ 

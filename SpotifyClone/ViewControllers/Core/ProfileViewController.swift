@@ -124,7 +124,7 @@ class ProfileViewController: UIViewController {
     private func fetchUserProfile() {
         activityIndicator.startAnimating()
         
-        ApiCaller.shared.getCurrentUserProfile { [weak self] result in
+        ApiCaller.shared.getCurrentProfile { [weak self] result in
             DispatchQueue.main.async {
                 self?.activityIndicator.stopAnimating()
                 
