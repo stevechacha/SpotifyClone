@@ -4,6 +4,7 @@
 //
 //  Created by stephen chacha on 24/12/2024.
 //
+import Foundation
 
 struct SettingsModel {
     let title: String

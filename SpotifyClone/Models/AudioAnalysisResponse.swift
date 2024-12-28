@@ -12,13 +12,13 @@ import Foundation
 
 // MARK: - AudioAnalysisResponse
 struct AudioAnalysisResponse: Codable {
-    let meta: Meta
-    let track: AudioAnalysisTrack
-    let bars: [Bar]
-    let beats: [Beat]
-    let sections: [Section]
-    let segments: [Segment]
-    let tatums: [Tatum]
+    let meta: Meta?
+    let track: AudioAnalysisTrack?
+    let bars: [Bar]?
+    let beats: [Beat]?
+    let sections: [Section]?
+    let segments: [Segment]?
+    let tatums: [Tatum]?
 }
 
 // MARK: - Meta

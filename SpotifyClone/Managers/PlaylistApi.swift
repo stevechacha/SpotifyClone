@@ -6,129 +6,41 @@
 //
 import Foundation
 
+import Foundation
+
 final class PlaylistApiCaller {
     
+    static let shared = PlaylistApiCaller()
     
     struct Constants {
-        static let baseAPURL = "https://api.spotify.com/v1"
-
+        static let baseAPIURL = "https://api.spotify.com/v1"
     }
-    //playlists/{playlist_id}/tracks
-    // curl --request PUT \
-    //--url https://api.spotify.com/v1/playlists/3cEYpjA9oz9GiPac4AsH4n/tracks \
-    //--header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z' \
-    //--header 'Content-Type: application/json' \
-    //--data '{
-    //  "range_start": 1,
-    //  "insert_before": 3,
-    //  "range_length": 2
-    //}'
-    // UpdatePlaylistItems
     
-    
-    //Get Current User's Playlists
-    //curl --request GET \
-    //  --url https://api.spotify.com/v1/me/playlists \
-    //  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
-    // @GET(/me/playlists)
-    
-    
-    public func getCurrentUsersPlaylist(completion: @escaping (Result<CurrentUsersPlaylistsResponse,Error>)-> Void){
-        createRequest(with: URL(string: "https://api.spotify.com/v1/me/playlists"), type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request){ data, _ , error in
-                guard let data = data , error == nil else {
+    // MARK: - Get Current User's Playlists
+    public func getCurrentUsersPlaylist(completion: @escaping (Result<CurrentUsersPlaylistsResponse, Error>) -> Void) {
+        AuthManager.shared.createRequest(with: URL(string: "\(Constants.baseAPIURL)/me/playlists"), type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
                     completion(.failure(ApiError.failedToGetData))
                     return
                 }
                 do {
-                    let json = try JSONSerialization.jsonObject(with: data , options: .allowFragments)
-                    print(json)
+                    let response = try JSONDecoder().decode(CurrentUsersPlaylistsResponse.self, from: data)
+                    completion(.success(response))
                 } catch {
-                    print(error)
+                    print("Error decoding CurrentUsersPlaylistsResponse: \(error)")
                     completion(.failure(error))
                 }
-                
             }
             task.resume()
         }
     }
     
-    //curl --request POST \
-    //  --url https://api.spotify.com/v1/users/smedjan/playlists \
-    //  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z' \
-    //  --header 'Content-Type: application/json' \
-    //  --data '{
-    //    "name": "New Playlist",
-    //    "description": "New playlist description",
-    //    "public": false
-    //}'
-    // @POST(/users/{user_id}/playlists)
-    // MARK: - CreatePlaylistResponse
-    
-    
-    public func createPlaylist(completion: @escaping (Result<CurrentUsersPlaylistsResponse,Error>)-> Void){
-        createRequest(with: URL(string: "https://api.spotify.com/v1/users/{user_id}/playlists"), type: .POST) { request in
-            let task = URLSession.shared.dataTask(with: request){ data, _ , error in
-                guard let data = data , error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                do {
-                    let json = try JSONSerialization.jsonObject(with: data , options: .allowFragments)
-                    print(json)
-                } catch {
-                    print(error)
-                    completion(.failure(error))
-                }
-                
-            }
-            task.resume()
-        }
-    }
-    
-    
-    //Get Featured Playlists
-    //curl --request GET \
-    //  --url https://api.spotify.com/v1/browse/featured-playlists \
-    //  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
-    // @GET(https://api.spotify.com/v1/browse/featured-playlists)
-    
-    public func getFeaturedPlaylist(completion: @escaping (Result<FeaturedPlayListResponse,Error>)-> Void){
-        createRequest(with: URL(string: "https://api.spotify.com/v1/browse/featured-playlists"), type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request){ data, _ , error in
-                guard let data = data , error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                do {
-                    let json = try JSONSerialization.jsonObject(with: data , options: .allowFragments)
-                    print(json)
-                } catch {
-                    print(error)
-                    completion(.failure(error))
-                }
-                
-            }
-            task.resume()
-        }
-    }
-    
-    
-    //// Get Playlist
-    //curl --request GET \
-    //  --url https://api.spotify.com/v1/playlists/3cEYpjA9oz9GiPac4AsH4n \
-    //  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
-    // @GET(https://api.spotify.com/v1/playlists/player_list_id)
-    // response Playlist
-    
-    func getPlaylist(genres: Set<String>, completion: @escaping ((Result<Playlists,Error>)->Void)){
-        let seeds = genres.joined(separator: ",")
-        createRequest(
-            with: URL(string: Constants.baseAPURL + "/playlists/player_list_id"),
-            type: .GET
-        ){ request in
-            let task = URLSession.shared.dataTask(with: request){ data, _, error in
-                guard let data = data , error == nil else {
+    // MARK: - Save a Playlist
+    public func savePlaylist(playlistID: String, completion: @escaping (Result<Playlists, Error>) -> Void) {
+        AuthManager.shared.createRequest(with: URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)"), type: .PUT) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
                     completion(.failure(ApiError.failedToGetData))
                     return
                 }
@@ -137,115 +49,215 @@ final class PlaylistApiCaller {
                     let result = try JSONDecoder().decode(Playlists.self, from: data)
                     print(result)
                     completion(.success(result))
-                }
-                catch {
-                    print(error)
+                } catch {
+                    print("Error decoding Playlists: \(error)")
                     completion(.failure(error))
                 }
             }
             task.resume()
-            
         }
     }
     
-    // Change Playlist Details
-    // data added Playlist
-    //curl --request PUT \
-    //  --url https://api.spotify.com/v1/playlists/3cEYpjA9oz9GiPac4AsH4n \
-    //  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z' \
-    //  --header 'Content-Type: application/json' \
-    //  --data '{
-    //    "name": "Updated Playlist Name",
-    //    "description": "Updated playlist description",
-    //    "public": false
-    //}'
-
-    // @PUT(https://api.spotify.com/v1/playlists/player_list_id)
-    
-    func savePlaylist(genres: Set<String>, completion: @escaping ((Result<Playlists,Error>)->Void)){
-        let seeds = genres.joined(separator: ",")
-        createRequest(
-            with: URL(string: Constants.baseAPURL + "/playlists/player_list_id"),
-            type: .PUT
-        ){ request in
-            let task = URLSession.shared.dataTask(with: request){ data, _, error in
-                guard let data = data , error == nil else {
+    // MARK: - Create a Playlist
+    public func createPlaylist(userId: String, name: String, description: String, isPublic: Bool, completion: @escaping (Result<CreatePlaylistResponse, Error>) -> Void) {
+        guard let url = URL(string: "\(Constants.baseAPIURL)/users/\(userId)/playlists") else { return }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = AuthManager.HTTPMethod.POST.rawValue
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let body: [String: Any] = [
+            "name": name,
+            "description": description,
+            "public": isPublic
+        ]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: .fragmentsAllowed)
+        
+        AuthManager.shared.createRequest(with: url, type: .POST) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
                     completion(.failure(ApiError.failedToGetData))
                     return
                 }
-                
                 do {
-                    let result = try JSONDecoder().decode(Playlists.self, from: data)
-                    print(result)
-                    completion(.success(result))
-                }
-                catch {
-                    print(error)
+                    let response = try JSONDecoder().decode(CreatePlaylistResponse.self, from: data)
+                    completion(.success(response))
+                } catch {
+                    print("Error decoding CreatePlaylistResponse: \(error)")
                     completion(.failure(error))
                 }
             }
             task.resume()
-            
         }
     }
-
-    //Get Playlist Items
-    ///playlists/{playlist_id}/tracks
-    ///curl --request GET \
-    //--url https://api.spotify.com/v1/playlists/3cEYpjA9oz9GiPac4AsH4n/tracks \
-    //--header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
-
-    // MARK: - PlayerListShowItem
     
-    func getPlaylistTracks(genres: Set<String>, completion: @escaping ((Result<PlayerListShowItem,Error>)->Void)){
-        let seeds = genres.joined(separator: ",")
-        createRequest(
-            with: URL(string: Constants.baseAPURL + "/playlists/{playlist_id}/tracks"),
-            type: .PUT
-        ){ request in
-            let task = URLSession.shared.dataTask(with: request){ data, _, error in
-                guard let data = data , error == nil else {
+    // MARK: - Get Featured Playlists
+    public func getFeaturedPlaylists(completion: @escaping (Result<FeaturedPlayListResponse, Error>) -> Void) {
+        AuthManager.shared.createRequest(with: URL(string: "\(Constants.baseAPIURL)/browse/featured-playlists"), type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
                     completion(.failure(ApiError.failedToGetData))
                     return
                 }
-                
                 do {
-                    let result = try JSONDecoder().decode(PlayerListShowItem.self, from: data)
-                    print(result)
-                    completion(.success(result))
-                }
-                catch {
-                    print(error)
+                    let response = try JSONDecoder().decode(FeaturedPlayListResponse.self, from: data)
+                    print("result\(response)")
+                    completion(.success(response))
+                } catch {
+                    print("Error decoding FeaturedPlayListResponse: \(error)")
                     completion(.failure(error))
                 }
             }
             task.resume()
-            
         }
     }
-
-    private func createRequest(
-        with url: URL?,
-        type: HTTPMethod,
-        completion: @escaping (URLRequest) -> Void
-    ) {
-        AuthManager.shared.withvalidToken { token in
-            guard let apiURL = url else { return }
-            
-            var request = URLRequest(url: apiURL)
-            request.httpMethod = type.rawValue
-            // Fix: Add a space between "Bearer" and the token
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.timeoutInterval = 30
-            completion(request)
-        }
-    }
-
     
-    enum HTTPMethod : String {
-        case GET
-        case POST
-        case PUT
+    
+    // MARK: - Get Playlist by ID
+    public func getPlaylist(playlistID: String, completion: @escaping (Result<Playlists, Error>) -> Void) {
+        guard let url = URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)") else { return }
+        
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                do {
+                    let response = try JSONDecoder().decode(Playlists.self, from: data)
+                    completion(.success(response))
+                } catch {
+                    print("Error decoding Playlists: \(error)")
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    // MARK: - Get Playlist Tracks
+    public func getPlaylistTracks(playlistID: String, completion: @escaping (Result<PlaylistTracksResponse, Error>) -> Void) {
+        guard let url = URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)/tracks") else { return }
+        
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                do {
+                    let response = try JSONDecoder().decode(PlaylistTracksResponse.self, from: data)
+                    completion(.success(response))
+                } catch {
+                    print("Error decoding PlaylistTracksResponse: \(error)")
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    // MARK: - Get Playlist Cover Image
+    public func getPlaylistCoverImage(playlistID: String, completion: @escaping (Result<[APIImage], Error>) -> Void) {
+        AuthManager.shared.createRequest(with: URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)/images"), type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                do {
+                    let response = try JSONDecoder().decode([APIImage].self, from: data)
+                    completion(.success(response))
+                } catch {
+                    print("Error decoding Playlist Cover Image: \(error)")
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    // MARK: - Unified Playlist Fetcher
+    public func fetchAllPlaylistDetails(playlistID: String, userID: String, completion: @escaping (Result<[String: Any], Error>) -> Void) {
+        var combinedResponse: [String: Any] = [:]
+        let dispatchGroup = DispatchGroup()
+        
+        // Fetch Current User's Playlists
+        dispatchGroup.enter()
+        getCurrentUsersPlaylist { result in
+            switch result {
+            case .success(let userPlaylists):
+                combinedResponse["UserPlaylists"] = userPlaylists
+            case .failure(let error):
+                print("Error fetching user's playlists: \(error)")
+            }
+            dispatchGroup.leave()
+        }
+        
+        // Fetch Featured Playlists
+        dispatchGroup.enter()
+        getFeaturedPlaylists { result in
+            switch result {
+            case .success(let featuredPlaylists):
+                combinedResponse["FeaturedPlaylists"] = featuredPlaylists
+            case .failure(let error):
+                print("Error fetching featured playlists: \(error)")
+            }
+            dispatchGroup.leave()
+        }
+        
+        // Fetch Playlist Details
+        dispatchGroup.enter()
+        getPlaylist(playlistID: playlistID) { result in
+            switch result {
+            case .success(let playlistDetails):
+                combinedResponse["PlaylistDetails"] = playlistDetails
+            case .failure(let error):
+                print("Error fetching playlist details: \(error)")
+            }
+            dispatchGroup.leave()
+        }
+        
+        // Fetch Playlist Tracks
+        dispatchGroup.enter()
+        getPlaylistTracks(playlistID: playlistID) { result in
+            switch result {
+            case .success(let playlistTracks):
+                combinedResponse["PlaylistTracks"] = playlistTracks
+            case .failure(let error):
+                print("Error fetching playlist tracks: \(error)")
+            }
+            dispatchGroup.leave()
+        }
+        
+        // Fetch Playlist Cover Image
+        dispatchGroup.enter()
+        getPlaylistCoverImage(playlistID: playlistID) { result in
+            switch result {
+            case .success(let coverImages):
+                combinedResponse["PlaylistCoverImage"] = coverImages
+            case .failure(let error):
+                print("Error fetching playlist cover image: \(error)")
+            }
+            dispatchGroup.leave()
+        }
+        
+        // Create a Playlist
+        dispatchGroup.enter()
+        createPlaylist(userId: userID, name: "New Playlist", description: "Generated by App", isPublic: true) { result in
+            switch result {
+            case .success(let newPlaylist):
+                combinedResponse["CreatedPlaylist"] = newPlaylist
+            case .failure(let error):
+                print("Error creating playlist: \(error)")
+            }
+            dispatchGroup.leave()
+        }
+        
+        // Wait for all API calls to complete
+        dispatchGroup.notify(queue: .main) {
+            completion(.success(combinedResponse))
+        }
     }
 
 }

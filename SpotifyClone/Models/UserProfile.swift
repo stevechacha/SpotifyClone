@@ -22,6 +22,7 @@ struct UserProfile: Codable {
 
 // MARK: - ApiError Enum
 enum ApiError: LocalizedError {
+    case code
     case tokenNotFound
     case invalidURL
     case failedToGetData
@@ -33,6 +34,7 @@ enum ApiError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
+        case .code : return "api code error"
         case .apiError(let message): // Use the associated value
             return "API Error: \(message)"
         case .decodingError(let message): // Use the associated value

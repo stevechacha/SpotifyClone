@@ -15,6 +15,22 @@ struct UsersSavedShows: Codable {
     let next: String?
     let offset: Int
     let previous: String?
-    let total: Int
-    let items: [ShowItem]
+    let total: Int?
+    let items: [UsersSavedShowsItems]?
 }
+
+
+
+struct UsersSavedShowsItems: Codable {
+    let addedAt: String
+    let show: Show
+
+    enum CodingKeys: String, CodingKey {
+        case addedAt = "added_at"
+        case show
+    }
+}
+
+
+
+

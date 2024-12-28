@@ -8,10 +8,9 @@
 import Foundation
 
 
-
 // MARK: - RecommendationsResponse
 struct RecommendationsResponse: Codable {
-    let tracks: [TrackItem]
+    let tracks: [Track]
 }
 
 

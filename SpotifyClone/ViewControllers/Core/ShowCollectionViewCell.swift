@@ -44,9 +44,9 @@ class ShowCollectionViewCell: UICollectionViewCell {
         nameLabel.frame = CGRect(x: 5, y: contentView.bounds.height - 30, width: contentView.bounds.width - 10, height: 25)
     }
     
-    func configure(with show: ShowItem) {
-        nameLabel.text = show.album?.name
-        if let imageUrl = show.album?.images.first?.url {
+    func configure(with show: UsersSavedShowsItems) {
+        nameLabel.text = show.show.name
+        if let imageUrl = show.show.images?.first?.url {
             loadImage(from: imageUrl)
         }
     }

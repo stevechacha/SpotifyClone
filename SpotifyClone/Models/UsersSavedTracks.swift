@@ -8,8 +8,6 @@
 
 import Foundation
 
-
-
 struct UsersSavedTracks: Codable {
     let href: String
     let limit: Int
@@ -17,5 +15,15 @@ struct UsersSavedTracks: Codable {
     let offset: Int
     let previous: String?
     let total: Int
-    let items: [ShowItem]
+    let items: [UsersSavedTracksItems]
+}
+
+struct UsersSavedTracksItems: Codable {
+    let addedAt: String
+    let album: Album
+
+    enum CodingKeys: String, CodingKey {
+        case addedAt = "added_at"
+        case album
+    }
 }

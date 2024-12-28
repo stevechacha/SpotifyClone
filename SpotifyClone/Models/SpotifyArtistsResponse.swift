@@ -16,16 +16,29 @@ struct Followers: Codable {
     let total: Int
 }
 
-struct SpotifyArtistsDetailResponse : Codable {
-    let externalUrls : ExternalUrls
-    let followers : Followers
-    let genres: [String]
-    let href : String
+struct SpotifyArtistsDetailResponse: Codable {
+    let externalUrls: ExternalUrls?
+    let followers: Followers?
+    let genres: [String]?
+    let href: String
     let id: String
-    let image: APIImage
+    let images: [APIImage]?  // Changed from 'image' to 'images' and made it an array
     let name: String
     let popularity: Int
-    let type: Artist
+    let type: String         // Changed from 'Artist?' to 'String'
     let uri: String
+
+    enum CodingKeys: String, CodingKey {
+        case externalUrls = "external_urls"
+        case followers
+        case genres
+        case href
+        case id
+        case images
+        case name
+        case popularity
+        case type
+        case uri
+    }
 }
 

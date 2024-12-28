@@ -25,7 +25,7 @@ final class RecommendedApiCaller {
     
     func getRecommedations(genres: Set<String>, completion: @escaping ((Result<RecommendationsResponse,Error>)->Void)){
         let seeds = genres.joined(separator: ",")
-        createRequest(
+        AuthManager.shared.createRequest(
             with: URL(string: Constants.baseAPURL + "/recommendations?limit=50&seed_genres=\(seeds)"),
             type: .GET
         ){ request in
@@ -59,7 +59,7 @@ final class RecommendedApiCaller {
 
     func getRecommendedGenre(genres: Set<String>, completion: @escaping ((Result<GenresResponse,Error>)->Void)) {
         let genreUrl = "https://api.spotify.com/v1/recommendations/available-genre-seeds"
-        createRequest(
+        AuthManager.shared.createRequest(
             with: URL(string: genreUrl),
             type: .GET
         ) { request in
@@ -105,27 +105,34 @@ final class RecommendedApiCaller {
         }
     }
     
-    private func createRequest(
-        with url: URL?,
-        type: HTTPMethod,
-        completion: @escaping (URLRequest) -> Void
-    ) {
-        AuthManager.shared.withvalidToken { token in
-            guard let apiURL = url else { return }
-            
-            var request = URLRequest(url: apiURL)
-            request.httpMethod = type.rawValue
-            // Fix: Add a space between "Bearer" and the token
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.timeoutInterval = 30
-            completion(request)
+    func getAvailableGenreSeeds(completion: @escaping (Result<GenreSeedsResponse, Error>) -> Void) {
+        let url = URL(string: "https://api.spotify.com/v1/recommendations/available-genre-seeds")
+        
+        AuthManager.shared.createRequest(with: url!, type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                
+                do {
+                    // Decode the response to get the genres
+                    let decoder = JSONDecoder()
+                    let response = try decoder.decode(GenreSeedsResponse.self, from: data)
+                    completion(.success(response))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
         }
     }
 
-    
-    enum HTTPMethod : String {
-        case GET
-        case POST
+    // Response model for available genres
+    struct GenreSeedsResponse: Codable {
+        let genres: [String]
     }
+
+    
 
 }

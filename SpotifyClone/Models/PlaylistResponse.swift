@@ -8,14 +8,32 @@
 import Foundation
 
 
+struct PlaylistTracksResponse: Codable {
+    let href: String
+    let limit: Int
+    let next: String?
+    let offset: Int
+    let previous: String?
+    let total: Int?
+    let items: [PlaylistItemsResponse]
+}
 
 
-//// Get Playlist
-//curl --request GET \
-//  --url https://api.spotify.com/v1/playlists/3cEYpjA9oz9GiPac4AsH4n \
-//  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
-// @GET(https://api.spotify.com/v1/playlists/player_list_id)
-// response Playlist
+// MARK: - PlayerListShowItem
+struct PlaylistItemsResponse: Codable {
+    let addedAt: String
+    let addedBy: AddedBy?
+    let isLocal: Bool?
+    let track: Track
+    
+    enum CodingKeys: String, CodingKey {
+        case addedAt = "added_at"
+        case addedBy = "added_by"
+        case isLocal = "is_local"
+        case track
+    }
+}
+
 
 // MARK: - Playlists
 struct Playlists: Codable {
@@ -25,23 +43,23 @@ struct Playlists: Codable {
     let offset: Int?
     let previous: String?
     let total: Int?
-    let items: [PlaylistItem]
+    let items: [PlaylistItem]?
 }
 
 // MARK: - Playlist
 struct PlaylistItem: Codable {
-    let collaborative: Bool
-    let description: String
-    let externalUrls: ExternalURLs
-    let followers: Followers
+    let collaborative: Bool?
+    let description: String?
+    let externalUrls: ExternalURLs?
+    let followers: Followers?
     let href: String
     let id: String
     let images: [APIImage]
     let name: String
-    let owner: Owner
+    let owner: Owner?
     let publicAccess: Bool
     let snapshotID: String
-    let tracks: Tracks
+    let tracks: Tracks?
     let type: String
     let uri: String
     
@@ -59,13 +77,13 @@ struct PlaylistItem: Codable {
 
 // MARK: - Owner
 struct Owner: Codable {
-    let externalUrls: ExternalURLs
-    let followers: Followers
+    let externalUrls: ExternalURLs?
+    let followers: Followers?
     let href: String
     let id: String
     let type: String
     let uri: String
-    let displayName: String
+    let displayName: String?
     
     enum CodingKeys: String, CodingKey {
         case externalUrls = "external_urls"
@@ -78,8 +96,8 @@ struct Owner: Codable {
 
 // MARK: - Added By
 struct AddedBy: Codable {
-    let externalUrls: ExternalURLs
-    let followers: Followers
+    let externalUrls: ExternalURLs?
+    let followers: Followers?
     let href: String
     let id: String
     let type: String

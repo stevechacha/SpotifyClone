@@ -8,7 +8,6 @@
 import Foundation
 
 
-
 struct MarketResponse : Codable {
     let markets: [String]
 }

@@ -7,18 +7,23 @@
 
 import Foundation
 
-struct SpotifyArtistRelatedArtistsResponse : Codable {
-    let externalUrls : ExternalUrls
-    let followers : Followers
-    let genres: [String]
-    let href : String
+struct SpotifyArtistRelatedArtistsResponse: Codable {
+    let artists: [RelatedArtist]?
+}
+
+struct RelatedArtist: Codable {
+    let externalUrls: ExternalUrls?
+    let followers: Followers?
+    let genres: [String]?
+    let href: String
     let id: String
-    let image: APIImage
+    let images: [APIImage]?
     let name: String
-    let popularity: Int
-    let type: Artist
+    let popularity: Int?
+    let type: String
     let uri: String
 }
+
 
 
 

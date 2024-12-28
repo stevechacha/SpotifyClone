@@ -56,14 +56,7 @@ final class AuthManager {
         return currentTime >= fiveMinutesBeforeExpiration
     }
 
-    
-//    private var shouldRefreshToken: Bool {
-//        guard let expirationDate = tokenExpirationDate else { return false }
-//        let currentTime = Date()
-//        let fiveMinutesBeforeExpiration = expirationDate.addingTimeInterval(-300) // 5 minutes early
-//        return currentTime >= fiveMinutesBeforeExpiration
-//    }
-    
+
     
     public var signInURL: URL? {
         let base = "https://accounts.spotify.com/authorize"
@@ -127,6 +120,27 @@ final class AuthManager {
     }
     
     private var onRefreshingBlocks = [((String) -> Void)]()
+    
+   
+
+        
+    public func withValidToken(completion: @escaping (String) -> Void) {
+        guard !refreshingToken else {
+            onRefreshingBlocks.append(completion)
+            return
+        }
+        
+        if shouldRefreshToken {
+            refreshAccessToken { [weak self] success in
+                if let token = self?.accessToken, success {
+                    completion(token)
+                }
+            }
+        } else if let token = accessToken {
+            completion(token)
+        }
+    }
+
     
     public func withvalidToken(completion: @escaping (String) -> Void){
         guard !refreshingToken else {
@@ -257,6 +271,52 @@ final class AuthManager {
         }
         let expirationDate = Date().addingTimeInterval(TimeInterval(result.expires_in))
         UserDefaults.standard.setValue(expirationDate, forKey: "expiration_date")
+    }
+    
+    public func getCurrentUserProfile(completion: @escaping (Result<UserProfile, Error>) -> Void) {
+        AuthManager.shared.createRequest(with: URL(string: "https://api.spotify.com/v1/me"), type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                
+                do {
+                    let userProfile = try JSONDecoder().decode(UserProfile.self, from: data)
+                    completion(.success(userProfile))
+                } catch {
+                    print("Error decoding user profile: \(error)")
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+
+    
+    // MARK: - Create API Request
+    public func createRequest(
+        with url: URL?,
+        type: HTTPMethod,
+        completion: @escaping (URLRequest) -> Void
+    ) {
+        AuthManager.shared.withvalidToken { token in
+            guard let apiURL = url else { return }
+            
+            var request = URLRequest(url: apiURL)
+            request.httpMethod = type.rawValue
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.timeoutInterval = 30
+            completion(request)
+        }
+    }
+    
+
+    enum HTTPMethod : String {
+        case GET
+        case POST
+        case PUT
+        case DELETE
     }
 }
 

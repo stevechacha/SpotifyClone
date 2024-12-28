@@ -9,5 +9,5 @@
 import Foundation
 
 struct Restrictions: Codable {
-    let reason: String
+    let reason: String?
 }
