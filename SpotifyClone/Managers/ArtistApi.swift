@@ -11,6 +11,8 @@ import Foundation
 final class ArtistApiCaller {
     
     static let shared = ArtistApiCaller()
+    
+
     struct Constants {
         static let artistBaseUrl = "https://api.spotify.com/v1/artists"
         static let baseAPURL = "https://api.spotify.com/v1"
@@ -49,9 +51,10 @@ final class ArtistApiCaller {
                 
                 do {
                     let result = try self.decoder.decode(RecommendationsResponse.self, from: data)
+                    print("Recommendation Artist : \(result)")
                     completion(.success(result))
                 } catch {
-                    print("Decoding error: \(error)")
+                    print("Recommended Artist Decoding error: \(error)")
                     completion(.failure(error))
                 }
             }
@@ -65,7 +68,6 @@ final class ArtistApiCaller {
         artistIDs: [String],
         completion: @escaping (Result<SpotifyArtistsResponse, Error>) -> Void
     ) {
-        // Ensure artistIDs are properly formatted as a comma-separated string
         let ids = artistIDs.joined(separator: ",")
         let urlString = "https://api.spotify.com/v1/artists?ids=\(ids)"
         
@@ -82,17 +84,18 @@ final class ArtistApiCaller {
                     return
                 }
                 
-                // Print the raw JSON response for debugging
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("Raw JSON Response: \(jsonString)")
-                }
+//                // Print the raw JSON response for debugging
+//                if let jsonString = String(data: data, encoding: .utf8) {
+//                    print("Raw JSON Response: \(jsonString)")
+//                }
                 
                 // Decode the response
                 do {
                     let response = try JSONDecoder().decode(SpotifyArtistsResponse.self, from: data)
+                    print("Several Artists \(response)")
                     completion(.success(response))
                 } catch {
-                    print("Decoding error: \(error)")
+                    print(" Several Decoding error: \(error)")
                     completion(.failure(error))
                 }
             }
@@ -115,17 +118,18 @@ final class ArtistApiCaller {
                     return
                 }
                 
-                // Debug: Print raw JSON response
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("Raw JSON Response: \(jsonString)")
-                }
+//                // Debug: Print raw JSON response
+//                if let jsonString = String(data: data, encoding: .utf8) {
+//                    print("Raw JSON Response: \(jsonString)")
+//                }
                 
                 do {
                     // Decode JSON response into your `SpotifyArtistsDetailResponse` model
                     let response = try JSONDecoder().decode(SpotifyArtistsDetailResponse.self, from: data)
+                    print("Artist Details :\(response)")
                     completion(.success(response))
                 } catch {
-                    print("Decoding error: \(error)")
+                    print("Artist Details Decoding error: \(error)")
                     completion(.failure(error))
                 }
             }
@@ -154,9 +158,10 @@ final class ArtistApiCaller {
                 
                 do {
                     let response = try self.decoder.decode(SpotifyArtistsAlbumsResponse.self, from: data)
+                    print("Artist Albums : \(response)")
                     completion(.success(response))
                 } catch {
-                    print("Decoding error: \(error)")
+                    print("Artist Albums Decoding error: \(error)")
                     completion(.failure(error))
                 }
             }
@@ -183,10 +188,10 @@ final class ArtistApiCaller {
                     return
                 }
 
-                // Print the raw JSON response for debugging
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("Raw JSON Response: \(jsonString)")
-                }
+//                // Print the raw JSON response for debugging
+//                if let jsonString = String(data: data, encoding: .utf8) {
+//                    print("Raw JSON Response: \(jsonString)")
+//                }
 
                 do {
                     let response = try JSONDecoder().decode(SpotifyArtistRelatedArtistsResponse.self, from: data)
@@ -220,11 +225,11 @@ final class ArtistApiCaller {
                     return
                 }
                 
-                // Debugging: Print raw JSON response
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("Raw JSON Response: \(jsonString)")
-                }
-                
+//                // Debugging: Print raw JSON response
+//                if let jsonString = String(data: data, encoding: .utf8) {
+//                    print("Raw JSON Response: \(jsonString)")
+//                }
+//                
                 
                 do {
                     let trackResponse = try JSONDecoder().decode(SpotifyArtistsTopTracksResponse.self, from: data)
@@ -263,6 +268,7 @@ final class ArtistApiCaller {
                 do {
                     // Decode the response into the correct model
                     let response = try JSONDecoder().decode(SpotifyArtistRelatedArtistsResponse.self, from: data)
+                    print("Artist Related Artist \(response)")
                     completion(.success(response))
                 } catch {
                     completion(.failure(error))
@@ -289,14 +295,15 @@ final class ArtistApiCaller {
                     return
                 }
                 
-                // Debugging raw JSON response
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("Search Artists Raw JSON Response: \(jsonString)")
-                }
+//                // Debugging raw JSON response
+//                if let jsonString = String(data: data, encoding: .utf8) {
+//                    print("Search Artists Raw JSON Response: \(jsonString)")
+//                }
                 
                 // Decode the JSON response
                 do {
                     let response = try JSONDecoder().decode(SpotifySearchResponse.self, from: data)
+                    print(response.artists)
                     completion(.success(response.artists.items))
                 } catch {
                     print("Decoding error: \(error)")

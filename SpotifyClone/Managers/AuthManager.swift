@@ -311,6 +311,38 @@ final class AuthManager {
         }
     }
     
+    func performRequest<T: Decodable>(
+        url: URL?,
+        type: AuthManager.HTTPMethod,
+        responseType: T.Type,
+        completion: @escaping (Result<T, Error>) -> Void
+    ) {
+        guard let apiURL = url else {
+            completion(.failure(ApiError.invalidURL))
+            return
+        }
+
+        createRequest(with: apiURL, type: type) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                
+                do {
+                    let result = try JSONDecoder().decode(T.self, from: data)
+                    print(result)
+                    completion(.success(result))
+                } catch {
+                    print("Decoding Error: \(error.localizedDescription)")
+                    print("Response Data: \(String(data: data, encoding: .utf8) ?? "No data")")
+                    completion(.failure(ApiError.decodingError(error.localizedDescription)))
+                }
+            }
+            task.resume()
+        }
+    }
+    
 
     enum HTTPMethod : String {
         case GET

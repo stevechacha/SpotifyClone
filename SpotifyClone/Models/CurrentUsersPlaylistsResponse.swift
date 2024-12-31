@@ -16,7 +16,7 @@ struct CurrentUsersPlaylistsResponse: Codable {
     let offset: Int
     let previous: String?
     let total: Int
-    let items: [PlaylistItems]?
+    let items: [PlaylistItem]?
 }
 
 

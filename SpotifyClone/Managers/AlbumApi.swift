@@ -24,7 +24,7 @@ final class AlbumApiCaller {
         genres: Set<String>,
         seedAlbums: [String],
         seedTracks: [String],
-        completion: @escaping (Result<RecommendedGenresResponse, ApiError>) -> Void
+        completion: @escaping (Result<RecommendationsResponse, ApiError>) -> Void
     ) {
         var urlString = "\(Constants.baseAPURL)recommendations?seed_albums=\(seedAlbums.joined(separator: ","))"
         
@@ -49,10 +49,66 @@ final class AlbumApiCaller {
                 }
                 
                 do {
-                    let result = try JSONDecoder().decode(RecommendedGenresResponse.self, from: data)
+                    let result = try JSONDecoder().decode(RecommendationsResponse.self, from: data)
                     completion(.success(result))
                 } catch {
                     completion(.failure(.decodingError(error.localizedDescription)))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    // MARK: - Get Album
+    public func getAlbum(albumIDs: [String], completion: @escaping (Result<SpotifyAlbumResponse, Error>) -> Void) {
+        // Ensure the album IDs are joined as a comma-separated string
+        let idsParam = albumIDs.joined(separator: ",")
+        guard let url = URL(string: Constants.baseAPURL + "/albums?ids=\(idsParam)") else {
+            completion(.failure(ApiError.invalidURL))
+            return
+        }
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let data = data else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .convertFromSnakeCase
+                    if let jsonObject = try? JSONSerialization.jsonObject(with: data),
+                       let jsonDict = jsonObject as? [String: Any],
+                       jsonDict["error"] != nil {
+                        let errorResponse = try decoder.decode(SpotifyAPIErrorResponse.self, from: data)
+                        print("API Error:", errorResponse.error.message)
+                        completion(.failure(ApiError.apiError(errorResponse.error.message)))
+                        return
+                    }
+                    
+                    let decodedResponse = try decoder.decode(SpotifyAlbumResponse.self, from: data)
+                    completion(.success(decodedResponse))
+                    
+                } catch let DecodingError.keyNotFound(key, context) {
+                    print("Key '\(key)' not found:", context.debugDescription)
+                    print("CodingPath:", context.codingPath)
+                    completion(.failure(ApiError.decodingError("Key '\(key)' not found in JSON.")))
+                } catch let DecodingError.valueNotFound(value, context) {
+                    print("Value '\(value)' not found:", context.debugDescription)
+                    print("CodingPath:", context.codingPath)
+                    completion(.failure(ApiError.decodingError("Value '\(value)' is missing in JSON.")))
+                } catch let DecodingError.typeMismatch(type, context) {
+                    print("Type '\(type)' mismatch:", context.debugDescription)
+                    print("CodingPath:", context.codingPath)
+                    completion(.failure(ApiError.decodingError("Type mismatch for type '\(type)'.")))
+                } catch {
+                    print("Error decoding JSON:", error.localizedDescription)
+                    completion(.failure(ApiError.decodingError("Unexpected decoding error: \(error.localizedDescription)")))
                 }
             }
             task.resume()
@@ -133,9 +189,6 @@ final class AlbumApiCaller {
         }
     }
     
-    
-    
-    
     // MARK: - Get Album Tracks
     func getAlbumTracks(albumID: String, completion: @escaping (Result<AlbumTracksResponse, Error>) -> Void) {
         guard let url = URL(string: "https://api.spotify.com/v1/albums/\(albumID)/tracks") else { return }
@@ -160,14 +213,52 @@ final class AlbumApiCaller {
             task.resume()
         }
     }
-
     
-    
+    func getAllAlbumTracks(albumID: String, completion: @escaping (Result<[Track], Error>) -> Void) {
+        var allTracks: [Track] = []
+        var nextURL: String? = "\(Constants.baseAPURL)albums/\(albumID)/tracks"
+        
+        func fetchTracks(urlString: String) {
+            guard let url = URL(string: urlString) else {
+                completion(.failure(ApiError.invalidURL))
+                return
+            }
+            
+            AuthManager.shared.createRequest(with: url, type: .GET) { request in
+                let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                    guard let data = data, error == nil else {
+                        completion(.failure(ApiError.failedToGetData))
+                        return
+                    }
+                    
+                    do {
+                        let result = try JSONDecoder().decode(AlbumTracksResponse.self, from: data)
+                        allTracks.append(contentsOf: result.items)
+                        
+                        // Check for paginatio
+                        if let next = result.next {
+                            nextURL = next
+                            fetchTracks(urlString: next)
+                        } else {
+                            let tracksCopy = allTracks
+                            completion(.success(tracksCopy))
+                        }
+                    } catch {
+                        completion(.failure(error))
+                    }
+                }
+                task.resume()
+            }
+        }
+        
+        // Start the first request
+        if let next = nextURL {
+            fetchTracks(urlString: next)
+        }
+    }
 
     
     // MARK: - Get User's Saved Albums
-    
-    
     func getSavedAlbums(completion: @escaping (Result<SpotifyUsersAlbumSavedResponse, ApiError>) -> Void) {
         guard let url = URL(string: Constants.savedAlbumsEndpoint) else {
             completion(.failure(.invalidURL))
@@ -181,10 +272,10 @@ final class AlbumApiCaller {
                     return
                 }
                 
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("Raw JSON Response: \(jsonString)")
-                }
-                
+//                if let jsonString = String(data: data, encoding: .utf8) {
+//                    print("Raw JSON Response: \(jsonString)")
+//                }
+//                
                 
                 do {
                     // Decode the saved albums response into an array of Album objects
@@ -195,7 +286,7 @@ final class AlbumApiCaller {
                     }
                     for item in result.items {
                         if let album = item.album {
-                            print("Album Name: \(album.name)")
+                            print("Album Name: \(album.name ?? "Unknown Album")")
                         } else {
                             print("Missing album data for item added at: \(item.addedAt)")
                         }
@@ -278,8 +369,10 @@ final class AlbumApiCaller {
                 
                 do {
                     let result = try JSONDecoder().decode(SpotifyNewReleasesAlbumsResponse.self, from: data)
+                    print(result)
                     completion(.success(result))
                 } catch {
+                    print(error)
                     completion(.failure(.decodingError(error.localizedDescription)))
                 }
             }
@@ -287,55 +380,20 @@ final class AlbumApiCaller {
         }
     }
     
-    func getAllAlbumTracks(albumID: String, completion: @escaping (Result<[Track], Error>) -> Void) {
-        var allTracks: [Track] = []
-        var nextURL: String? = "\(Constants.baseAPURL)albums/\(albumID)/tracks"
-        
-        func fetchTracks(urlString: String) {
-            guard let url = URL(string: urlString) else {
-                completion(.failure(ApiError.invalidURL))
-                return
-            }
-            
-            AuthManager.shared.createRequest(with: url, type: .GET) { request in
-                let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                    guard let data = data, error == nil else {
-                        completion(.failure(ApiError.failedToGetData))
-                        return
-                    }
-                    
-                    do {
-                        let result = try JSONDecoder().decode(AlbumTracksResponse.self, from: data)
-                        allTracks.append(contentsOf: result.items)
-                        
-                        // Check for paginatio
-                        if let next = result.next {
-                            nextURL = next
-                            fetchTracks(urlString: next)
-                        } else {
-                            let tracksCopy = allTracks
-                            completion(.success(tracksCopy))
-                        }
-                    } catch {
-                        completion(.failure(error))
-                    }
-                }
-                task.resume()
-            }
-        }
-        
-        // Start the first request
-        if let next = nextURL {
-            fetchTracks(urlString: next)
-        }
-    }
+    
     
     func searchForAlbums(query: String, completion: @escaping (Result<[Album], ApiError>) -> Void) {
-        guard let url = URL(string: "https://api.spotify.com/v1/search?q=\(query)&type=album") else {
-            completion(.failure(.invalidURL))
-            return
-        }
-        
+        var components = URLComponents(string: "https://api.spotify.com/v1/search")
+            components?.queryItems = [
+                URLQueryItem(name: "q", value: query),
+                URLQueryItem(name: "type", value: "album")
+            ]
+            
+            guard let url = components?.url else {
+                completion(.failure(.invalidURL))
+                return
+            }
+
         AuthManager.shared.createRequest(with: url, type: .GET) { request in
             let task = URLSession.shared.dataTask(with: request) { data, _, error in
                 guard let data = data, error == nil else {
@@ -355,66 +413,16 @@ final class AlbumApiCaller {
         }
     }
     
-    public func getAlbum(albumIDs: [String], completion: @escaping (Result<SpotifyAlbumResponse, Error>) -> Void) {
-        // Ensure the album IDs are joined as a comma-separated string
-        let idsParam = albumIDs.joined(separator: ",")
-        guard let url = URL(string: Constants.baseAPURL + "/albums?ids=\(idsParam)") else {
-            completion(.failure(ApiError.invalidURL))
-            return
-        }
-        
-        // Call createRequest with the correct URL and make the request
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-                
-                guard let data = data else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-                do {
-                    // Try to decode the response
-                    let decoder = JSONDecoder()
-                    decoder.keyDecodingStrategy = .convertFromSnakeCase
-                    
-                    // Check if the response contains an error (API error like the "missing ids")
-                    if let jsonObject = try? JSONSerialization.jsonObject(with: data),
-                       let jsonDict = jsonObject as? [String: Any],
-                       jsonDict["error"] != nil {
-                        // Decode the error response and handle it
-                        let errorResponse = try decoder.decode(SpotifyAPIErrorResponse.self, from: data)
-                        print("API Error:", errorResponse.error.message)
-                        completion(.failure(ApiError.apiError(errorResponse.error.message)))
-                        return
-                    }
-                    
-                    // Decode the success response if no error
-                    let decodedResponse = try decoder.decode(SpotifyAlbumResponse.self, from: data)
-                    completion(.success(decodedResponse))
-                    
-                } catch let DecodingError.keyNotFound(key, context) {
-                    print("Key '\(key)' not found:", context.debugDescription)
-                    print("CodingPath:", context.codingPath)
-                    completion(.failure(ApiError.decodingError("Key '\(key)' not found in JSON.")))
-                } catch let DecodingError.valueNotFound(value, context) {
-                    print("Value '\(value)' not found:", context.debugDescription)
-                    print("CodingPath:", context.codingPath)
-                    completion(.failure(ApiError.decodingError("Value '\(value)' is missing in JSON.")))
-                } catch let DecodingError.typeMismatch(type, context) {
-                    print("Type '\(type)' mismatch:", context.debugDescription)
-                    print("CodingPath:", context.codingPath)
-                    completion(.failure(ApiError.decodingError("Type mismatch for type '\(type)'.")))
-                } catch {
-                    print("Error decoding JSON:", error.localizedDescription)
-                    completion(.failure(ApiError.decodingError("Unexpected decoding error: \(error.localizedDescription)")))
-                }
+    func fetchAlbumIDs(completion: @escaping (Result<[String], Error>) -> Void) {
+        AlbumApiCaller.shared.getSavedAlbums { result in
+            switch result {
+            case .success(let savedAlbumsResponse):
+                // Extract album IDs from the response
+                let albumIDs = savedAlbumsResponse.items.compactMap { $0.album?.id }
+                completion(.success(albumIDs))
+            case .failure(let error):
+                completion(.failure(error))
             }
-            task.resume()
         }
     }
-
 }

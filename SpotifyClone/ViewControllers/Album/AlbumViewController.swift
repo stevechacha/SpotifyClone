@@ -26,11 +26,26 @@ class AlbumViewController : UIViewController {
         
 //        fetchAlbumsAndTracks()
 //          getNewReleasesAlbums()
-          getAlbums()
+        fetchAndProcessAlbums()
         
         
 
     }
+    
+    func fetchAndProcessAlbums() {
+        AlbumApiCaller.shared.fetchAlbumIDs { result in
+            switch result {
+            case .success(let albumIDs):
+                print("Fetched Album IDs: \(albumIDs)")
+                self.fetchAlbumDataForMultipleAlbums(albumIDs: albumIDs)
+            case .failure(let error):
+                print("Failed to fetch album IDs: \(error)")
+            }
+        }
+    }
+
+    
+   
     
     func fetchAlbumDataForMultipleAlbumsInParallel(albumIDs: [String]) {
         let dispatchGroup = DispatchGroup()
@@ -97,6 +112,16 @@ class AlbumViewController : UIViewController {
                             print("Tracks for album \(album.name ?? "Unknow Album"):")
                             for track in tracks.items {
                                 print("- \(track.name) (Duration: \(track.durationMs! / 1000) seconds)")
+                                TrackApiCaller.shared.getTrack(trackID: track.id){ results in
+                                    switch results {
+                                    case .success(let track):
+                                        print("TrackApiCaller - \(track.name) (Duration: \(track.durationMs! / 1000) seconds)")
+                                    case .failure(let error):
+                                        print(error)
+                                    }
+                                    
+                                }
+
                             }
                         case .failure(let error):
                             print("Failed to fetch tracks for album \(album.name ?? "Unkown Album"): \(error)")
@@ -133,8 +158,13 @@ class AlbumViewController : UIViewController {
                     
                     guard let albumID = album.id else {
                         print("Album ID is missing for album: \(album.name ?? "Unknown Album").")
+                        
+                        self.fetchAlbumRecommendations(albumID: album.id ?? "Nil")
                         continue
                     }
+                    
+                    self.fetchAlbumRecommendations(albumID: album.id ?? "")
+
                     
                     // Fetch tracks for the album
                     AlbumApiCaller.shared.getAlbumTracks(albumID: albumID) { tracksResult in
@@ -161,41 +191,41 @@ class AlbumViewController : UIViewController {
     }
     
 
-//    func fetchAlbumRecommendations(albumID: String) {
-//        print("Fetching recommendations based on album ID: \(albumID)...")
-//
-//        // Step 1: Fetch album details to get genres
-//        AlbumApiCaller.shared.getAlbumDetails(albumID: albumID) { albumResult in
-//            switch albumResult {
-//            case .success(let album):
-//                print("Album Name: \(album.name)")
-//                print("Genres: \(album.genres?.joined(separator: ", ") ?? "Unknown")")
-//
-//                // Convert genres array to Set<String>
-//                let genresSet = Set(album.genres ?? ["pop"])
-//
-//                // Step 2: Fetch recommendations based on genres and album ID
-//                AlbumApiCaller.shared.getRecommendationsForAlbum(
-//                    genres: genresSet,
-//                    seedAlbums: [albumID],  // Use album ID as seed
-//                    seedTracks: []          // Optionally, you can add seed tracks here
-//                ) { recommendationsResult in
-//                    switch recommendationsResult {
-//                    case .success(let recommendations):
-//                        print("Recommended Albums based on \(album.name):")
-//                        for recommendedAlbum in recommendations.genres.releaseDate {
-//                            print("- \(recommendedAlbum.name) (Released: \(recommendedAlbum.releaseDate))")
-//                        }
-//                    case .failure(let error):
-//                        print("Failed to fetch recommendations for album \(album.name): \(error)")
-//                    }
-//                }
-//
-//            case .failure(let error):
-//                print("Failed to fetch album details for ID \(albumID): \(error)")
-//            }
-//        }
-//    }
+    func fetchAlbumRecommendations(albumID: String) {
+        print("Fetching recommendations based on album ID: \(albumID)...")
+
+        // Step 1: Fetch album details to get genres
+        AlbumApiCaller.shared.getAlbumDetails(albumID: albumID) { albumResult in
+            switch albumResult {
+            case .success(let album):
+                print("Album Name: \(album.name)")
+                print("Genres: \(album.genres?.joined(separator: ", ") ?? "Unknown")")
+
+                // Convert genres array to Set<String>
+                let genresSet = Set(album.genres ?? ["pop"])
+
+                // Step 2: Fetch recommendations based on genres and album ID
+                AlbumApiCaller.shared.getRecommendationsForAlbum(
+                    genres: genresSet,
+                    seedAlbums: [albumID],  // Use album ID as seed
+                    seedTracks: []          // Optionally, you can add seed tracks here
+                ) { recommendationsResult in
+                    switch recommendationsResult {
+                    case .success(let recommendations):
+                        print("Recommended Albums based on \(album.name):")
+                        for recommendedAlbum in recommendations.tracks {
+                            print("- \(recommendedAlbum.name) (Released: \(recommendedAlbum.album?.releaseDate))")
+                        }
+                    case .failure(let error):
+                        print("Failed to fetch recommendations for album \(album.name): \(error)")
+                    }
+                }
+
+            case .failure(let error):
+                print("Failed to fetch album details for ID \(albumID): \(error)")
+            }
+        }
+    }
 
 
    
@@ -206,6 +236,7 @@ class AlbumViewController : UIViewController {
             case .success(let newReleases):
                 print("New Releases:")
                 for album in newReleases.albums.items {
+                    
                     print("Album Name: \(album.name ?? "Unknow Album")")
                     print("Artist(s): \(album.artists?.map { $0.name }.joined(separator: ", ") ?? "Unkown Artist")")
                     print("Release Date: \(album.releaseDate ?? "Unkown Released Date")")
@@ -264,7 +295,4 @@ class AlbumViewController : UIViewController {
         }
     
     }
-    
-
-
 }

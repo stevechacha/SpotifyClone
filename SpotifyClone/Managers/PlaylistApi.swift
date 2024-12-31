@@ -6,11 +6,13 @@
 //
 import Foundation
 
-import Foundation
 
 final class PlaylistApiCaller {
     
     static let shared = PlaylistApiCaller()
+    
+    private init() {}
+
     
     struct Constants {
         static let baseAPIURL = "https://api.spotify.com/v1"
@@ -182,7 +184,6 @@ final class PlaylistApiCaller {
         var combinedResponse: [String: Any] = [:]
         let dispatchGroup = DispatchGroup()
         
-        // Fetch Current User's Playlists
         dispatchGroup.enter()
         getCurrentUsersPlaylist { result in
             switch result {

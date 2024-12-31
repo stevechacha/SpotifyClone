@@ -69,7 +69,7 @@ class ChaptersViewController: UIViewController {
                     switch result {
                     case .success(let showDetail):
                         // Successfully fetched show details, now fetch episodes
-                        print("Fetched show: \(showDetail.name)")
+                        print("Fetched show: \(showDetail.name ?? "Unknow Show Detail Name")")
                         self.fetchEpisodes(for: showId)
                         
                     case .failure(let error):
@@ -101,7 +101,7 @@ class ChaptersViewController: UIViewController {
                 ChapterApiCaller.shared.getEpisodeDetails(episodeID: episodeId) { result in
                     switch result {
                     case .success(let episodeDetail):
-                        print("Fetched episode: \(episodeDetail.name)")
+                        print("Fetched episode: \(episodeDetail.name ?? "Unknown Episode Name")")
                         // Fetch chapters for this episode
                         self.fetchChapters(for: episodeId)
                         
@@ -195,7 +195,7 @@ class ChaptersViewController: UIViewController {
             switch result {
             case .success(let searchResponse):
                 if let firstShow = searchResponse.shows?.items?.first {
-                    print("Found Show: \(firstShow.name) (ID: \(firstShow.id))")
+                    print("Found Show: \(firstShow.name ?? "Unknown First Show Name") (ID: \(firstShow.id ?? "NO ShowID"))")
                     
                     // Step 2: Get Episodes of the Show
                     ChapterApiCaller.shared.getShowEpisodes(showID: firstShow.id!) { result in
@@ -203,7 +203,7 @@ class ChaptersViewController: UIViewController {
                         case .success(let episodesResponse):
                             // Access the 'items' property for episodes
                             let episodeIDs = episodesResponse.episodes?.map { $0.id }
-                            print("Fetched Episode IDs: \(episodeIDs)")
+                            print("Fetched Episode IDs: \(episodeIDs ?? [] )")
                             
                             // Get details for the first episode
                             if let firstEpisodeID = episodeIDs?.first {

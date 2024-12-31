@@ -13,7 +13,7 @@ struct SpotifyResponse: Codable {
     let tracks: PagedData<Track>
     let artists: PagedData<Artist>
     let albums: PagedData<Album>
-    let playlists: PagedData<PlaylistItems>
+    let playlists: PagedData<PlaylistItem>
     let shows: PagedData<Show>
     let episodes: PagedData<Episode>
     let audiobooks: PagedData<Audiobook>
@@ -30,31 +30,7 @@ struct PagedData<T: Codable>: Codable {
     let items: [T]
 }
 
-// MARK: - Playlist
-struct PlaylistItems: Codable {
-    let collaborative: Bool
-    let description: String
-    let externalURLs: ExternalURLs
-    let href: String
-    let id: String
-    let images: [APIImage]
-    let name: String
-    let owner: PlaylistOwner
-    let publicAccess: Bool?
-    let snapshotID: String
-    let tracks: Tracks
-    let type: String
-    let uri: String
 
-    enum CodingKeys: String, CodingKey {
-        case collaborative, description
-        case externalURLs = "external_urls"
-        case href, id, images, name, owner
-        case publicAccess = "public"
-        case snapshotID = "snapshot_id"
-        case tracks, type, uri
-    }
-}
 
 
 

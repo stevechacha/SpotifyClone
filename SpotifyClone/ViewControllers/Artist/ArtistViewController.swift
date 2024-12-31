@@ -62,7 +62,7 @@ class ArtistViewController: UIViewController {
             switch result {
             case .success(let albums):
                 for album in albums.items {
-                    print("Album: \(album.name), ID: \(album.id)")
+                    print("Album: \(album.name ?? "Unknown Album"), ID: \(album.id ?? "No Album Id")")
                 }
             case .failure(let error):
                 print("Error fetching albums: \(error.localizedDescription)")
@@ -80,8 +80,8 @@ class ArtistViewController: UIViewController {
                         switch result {
                         case .success(let artistDetails):
                             print("Artist Name: \(artistDetails.name)")
-                            print("Genres: \(artistDetails.genres?.joined(separator: ", "))")
-                            print("Followers: \(artistDetails.followers?.total)")
+                            print("Genres: \(artistDetails.genres?.joined(separator: ", ") ?? "Unknown Genres")")
+                            print("Followers: \(artistDetails.followers?.total ?? 0 )")
                         case .failure(let error):
                             print("Error fetching details for \(artistName): \(error)")
                         }
@@ -129,13 +129,13 @@ class ArtistViewController: UIViewController {
                         switch albumResult {
                         case .success(let albums):
                             for album in albums.artists ?? [] {
-                                print("Album: \(album.name)")
+                                print("Album: \(album.name ?? "Unknown Album")")
                                 
                                 // Fetch details of the first album
                                 AlbumApiCaller.shared.getAlbumDetails(albumID: album.id) { detailResult in
                                     switch detailResult {
                                     case .success(let albumDetail):
-                                        print("Album Details: \(albumDetail.name)")
+                                        print("Album Details: \(albumDetail.name ?? "Unknown Album Details")")
                                     case .failure(let error):
                                         print("Error fetching album details: \(error.localizedDescription)")
                                     }

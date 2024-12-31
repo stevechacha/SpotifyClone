@@ -15,17 +15,7 @@ class RecommendationsViewController: UIViewController {
         // Do any additional setup after loading the view.
     }
     
-    func getAvailableGenreSeeds(){
-        RecommendedApiCaller.shared.getAvailableGenreSeeds { result in
-            switch result {
-            case .success(let genres):
-                print("Available genres: \(genres)")
-            case .failure(let error):
-                print("Error fetching genres: \(error)")
-            }
-        }
-
-    }
+    
     
     // MARK: - Fetch Recommendations
     private func fetchData() {

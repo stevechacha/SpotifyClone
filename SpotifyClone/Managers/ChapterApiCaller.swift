@@ -51,6 +51,7 @@ final class ChapterApiCaller {
                 
                 do {
                     let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+                    print(decodedResponse)
                     completion(.success(decodedResponse))
                 } catch {
                     print(error)
@@ -138,32 +139,41 @@ final class ChapterApiCaller {
         )
     }
     
-//    func getUserSavedShows(completion: @escaping (Result<UsersSavedShows, Error>) -> Void) {
-//        guard let url = URL(string: "https://api.spotify.com/v1/me/shows?limit=20") else { return }
-//
-//        // Use AuthManager to create the request
-//        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-//            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-//                guard let data = data, error == nil else {
-//                    completion(.failure(ApiError.failedToGetData))
-//                    return
-//                }
-//                
-//                do {
-//                    // Decode the response into UserShowsResponse
-//                    let response = try JSONDecoder().decode(UsersSavedShows.self, from: data)
-//                    completion(.success(response))
-//                } catch {
-//                    print("Error decoding UserShowsResponse: \(error)")
-//                    completion(.failure(error))
-//                }
-//            }
-//            task.resume()
-//        }
-//    }
 
     
+    public func getPodcastDetails(showID: String, completion: @escaping (Result<Show, Error>) -> Void) {
+        fetch(
+            url: "https://api.spotify.com/v1/shows/\(showID)",
+            type: .GET,
+            responseType: Show.self,
+            completion: completion
+        )
+    }
+
     
+    public func searchPodcasts(query: String, completion: @escaping (Result<ShowsResponse, Error>) -> Void) {
+        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        fetch(
+            url: "https://api.spotify.com/v1/search?q=\(encodedQuery)&type=show",
+            type: .GET,
+            responseType: ShowsResponse.self,
+            completion: completion
+        )
+    }
+    
+    public func getPodcastEpisodes(showID: String, completion: @escaping (Result<EpisodesResponse, Error>) -> Void) {
+        fetch(
+            url: "https://api.spotify.com/v1/shows/\(showID)/episodes",
+            type: .GET,
+            responseType: EpisodesResponse.self,
+            completion: completion
+        )
+    }
+
+
+
+    
+
     
     // Add this method to ChapterApiCaller
     public func search(query: String, type: String, completion: @escaping (Result<SearchResponse, Error>) -> Void) {
@@ -179,31 +189,12 @@ final class ChapterApiCaller {
             return
         }
         
-        // Create the request
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-                // Debug: Print raw JSON response
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("Raw JSON response: \(jsonString)")
-                }
-                
-                // Try to decode the response
-                do {
-                    let decoder = JSONDecoder()
-                    let searchResponse = try decoder.decode(SearchResponse.self, from: data)
-                    completion(.success(searchResponse))
-                } catch {
-                    print("Decoding Error: \(error.localizedDescription)")
-                    completion(.failure(ApiError.decodingError(error.localizedDescription)))
-                }
-            }
-            task.resume()
-        }
+        fetch(
+            url: "https://api.spotify.com/v1/search?q=\(encodedQuery)&type=\(type)",
+            type: .GET,
+            responseType: SearchResponse.self,
+            completion: completion
+        )
     }
     
     func getUserSavedEpisodes(completion: @escaping (Result<UserSavedEpisodesResponse, Error>) -> Void) {

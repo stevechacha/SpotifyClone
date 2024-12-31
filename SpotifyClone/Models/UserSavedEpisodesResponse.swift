@@ -14,10 +14,10 @@ struct UserSavedEpisodesResponse: Codable {
     let offset: Int?
     let previous: String?
     let total: Int?
-    let items: [SavedEpisode]?
+    let items: [UserSavedEpisode]?
 }
 
-struct SavedEpisode: Codable {
+struct UserSavedEpisode: Codable {
     let addedAt: String?
     let episode: Episode?
     

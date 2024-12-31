@@ -11,9 +11,9 @@ import Foundation
 struct UserProfile: Codable {
     let id: String
     let display_name: String
-    let email: String
-    let country: String
-    let product: String// Free, Premium, etc.
+    let email: String?
+    let country: String?
+    let product: String?// Free, Premium, etc.
     let external_urls: [String: String] // Spotify profile links
     let images: [APIImage]?
 }

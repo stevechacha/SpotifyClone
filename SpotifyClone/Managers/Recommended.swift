@@ -9,106 +9,60 @@ import Foundation
 final class RecommendedApiCaller {
     
     static let shared = RecommendedApiCaller()
+    
+    private init() {}
 
+    
     
     struct Constants {
         static let baseAPURL = "https://api.spotify.com/v1"
-
+        
     }
-    // Get Recommendations
-    //curl --request GET \
-    //  --url 'https://api.spotify.com/v1/recommendations?seed_artists=4NHQUGzhtTLFvgF5SZesLK&seed_genres=classical%2Ccountry&seed_tracks=0c6xIDDpzE81m2q797ordA' \
-    //  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
-    // MARK: - RecommendationsResponse
-    //@Get(/recommendations?)
+    
     
     
     func getRecommedations(genres: Set<String>, completion: @escaping ((Result<RecommendationsResponse,Error>)->Void)){
         let seeds = genres.joined(separator: ",")
-        AuthManager.shared.createRequest(
-            with: URL(string: Constants.baseAPURL + "/recommendations?limit=50&seed_genres=\(seeds)"),
-            type: .GET
-        ){ request in
-            let task = URLSession.shared.dataTask(with: request){ data, _, error in
-                guard let data = data , error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-                do {
-                    let result = try JSONDecoder().decode(RecommendationsResponse.self, from: data)
-                    print(result)
-                    completion(.success(result))
-                }
-                catch {
-                    print(error)
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-            
-        }
+        
+        AuthManager.shared.performRequest(
+            url: URL(string: Constants.baseAPURL + "/recommendations?seed_genres=\(seeds)"),
+            type: .GET,
+            responseType: RecommendationsResponse.self,
+            completion: completion
+        )
+        
     }
     
-    //Get Available Genre Seeds
-    //curl --request GET \
-    //  --url https://api.spotify.com/v1/recommendations/available-genre-seeds \
-    //  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
-    // return GenresResponse
-    //@GET"(recommendations/available-genre-seeds
-
-    func getRecommendedGenre(genres: Set<String>, completion: @escaping ((Result<GenresResponse,Error>)->Void)) {
-        let genreUrl = "https://api.spotify.com/v1/recommendations/available-genre-seeds"
-        AuthManager.shared.createRequest(
-            with: URL(string: genreUrl),
-            type: .GET
-        ) { request in
-            // Debugging logs
-            print("Request URL: \(request.url?.absoluteString ?? "Invalid URL")")
-            print("Authorization Header: \(request.allHTTPHeaderFields?["Authorization"] ?? "No Authorization Header")")
-
-            let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    print("Error: \(error.localizedDescription)")
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("HTTP Status Code: \(httpResponse.statusCode)")
-                    if !(200...299).contains(httpResponse.statusCode) {
-                        print("Unexpected HTTP Status Code: \(httpResponse.statusCode)")
-                        if let data = data {
-                            print("Error Response Body: \(String(data: data, encoding: .utf8) ?? "No Data")")
-                        }
-                        completion(.failure(ApiError.failedToGetData))
-                        return
-                    }
-                }
-
-                guard let data = data else {
-                    print("No data received")
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-
-                do {
-                    let result = try JSONDecoder().decode(GenresResponse.self, from: data)
-                    print("Recommended Genres: \(result)")
-                    completion(.success(result))
-                } catch {
-                    print("Decoding Error: \(error.localizedDescription)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
+    
+    func getRecommendedGenre(completion: @escaping ((Result<GenreSeedsResponse,Error>)->Void)) {
+        AuthManager.shared.performRequest(
+            url: URL(string: "https://api.spotify.com/v1/recommendations/available-genre-seeds"),
+            type: .GET,
+            responseType: GenreSeedsResponse.self,
+            completion: completion
+        )
     }
+    
     
     func getAvailableGenreSeeds(completion: @escaping (Result<GenreSeedsResponse, Error>) -> Void) {
         let url = URL(string: "https://api.spotify.com/v1/recommendations/available-genre-seeds")
         
-        AuthManager.shared.createRequest(with: url!, type: .GET) { request in
+        AuthManager.shared.performRequest(
+            url: URL(string: "https://api.spotify.com/v1/recommendations/available-genre-seeds"),
+            type: .GET,
+            responseType: GenreSeedsResponse.self,
+            completion: completion
+        )
+        
+    }
+    
+    func fetchAvailableGenres(completion: @escaping (Result<[String], Error>) -> Void) {
+        guard let url = URL(string: "\(Constants.baseAPURL)/recommendations/available-genre-seeds") else {
+            completion(.failure(ApiError.invalidURL))
+            return
+        }
+        
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
             let task = URLSession.shared.dataTask(with: request) { data, _, error in
                 guard let data = data, error == nil else {
                     completion(.failure(ApiError.failedToGetData))
@@ -116,10 +70,8 @@ final class RecommendedApiCaller {
                 }
                 
                 do {
-                    // Decode the response to get the genres
-                    let decoder = JSONDecoder()
-                    let response = try decoder.decode(GenreSeedsResponse.self, from: data)
-                    completion(.success(response))
+                    let response = try JSONDecoder().decode(GenreSeedsResponse.self, from: data)
+                    completion(.success(response.genres))
                 } catch {
                     completion(.failure(error))
                 }
@@ -127,12 +79,105 @@ final class RecommendedApiCaller {
             task.resume()
         }
     }
+    
+    func getRecommendations(seedArtists: [String] = [],
+                                seedGenres: [String] = [],
+                                seedTracks: [String] = [],
+                                completion: @escaping (Result<[RecommendationTrack], Error>) -> Void) {
+            guard let url = buildURL(seedArtists: seedArtists, seedGenres: seedGenres, seedTracks: seedTracks) else {
+                completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
+                return
+            }
+            
+            AuthManager.shared.createRequest(with: url, type: .GET) { request in
+                let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                    if let error = error {
+                        print("Network error: \(error)")
+                        completion(.failure(error))
+                        return
+                    }
+                    
+                    if let httpResponse = response as? HTTPURLResponse {
+                        print("HTTP Status Code: \(httpResponse.statusCode)")
+                    }
+                    
+                    guard let data = data else {
+                        print("No data received from the server.")
+                        completion(.failure(NSError(domain: "NoData", code: 500, userInfo: nil)))
+                        return
+                    }
+                    
+                    if let jsonString = String(data: data, encoding: .utf8) {
+                        print("Raw JSON Response: \(jsonString)")
+                    } else {
+                        print("Failed to decode response as string.")
+                    }
+                    
+                    do {
+                        let recommendations = try JSONDecoder().decode(RecommendationsResponses.self, from: data)
+                        completion(.success(recommendations.tracks))
+                    } catch {
+                        print("Decoding error: \(error)")
+                        completion(.failure(error))
+                    }
+                }
+                task.resume()
 
-    // Response model for available genres
-    struct GenreSeedsResponse: Codable {
-        let genres: [String]
-    }
+
+            }
+        }
+        
+        private func buildURL(seedArtists: [String], seedGenres: [String], seedTracks: [String]) -> URL? {
+            var components = URLComponents(string: "https://api.spotify.com/v1/recommendations")
+            var queryItems: [URLQueryItem] = []
+            
+            if !seedArtists.isEmpty {
+                queryItems.append(URLQueryItem(name: "seed_artists", value: seedArtists.joined(separator: ",")))
+            }
+            if !seedGenres.isEmpty {
+                queryItems.append(URLQueryItem(name: "seed_genres", value: seedGenres.joined(separator: ",")))
+            }
+            if !seedTracks.isEmpty {
+                queryItems.append(URLQueryItem(name: "seed_tracks", value: seedTracks.joined(separator: ",")))
+            }
+            
+            queryItems.append(URLQueryItem(name: "limit", value: "20")) // Adjust limit if needed
+            components?.queryItems = queryItems
+            
+            return components?.url
+        }
 
     
+    struct RecommendationsResponses: Decodable {
+        let tracks: [RecommendationTrack]
+    }
+
+    struct RecommendationTrack: Decodable {
+        let name: String
+        let durationMs: Int?
+        let previewUrl: String?
+        let album: Album
+        let artists: [Artist]
+        
+        enum CodingKeys: String, CodingKey {
+            case name
+            case durationMs = "duration_ms"
+            case previewUrl = "preview_url"
+            case album
+            case artists
+        }
+    }
+
+
+
+
+
 
 }
+
+
+
+
+
+
+

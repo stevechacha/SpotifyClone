@@ -7,6 +7,14 @@
 
 import Foundation
 
+struct SpotifyAlbumsSearchResponse: Codable {
+    let album: AlbumResponse
+}
+
+struct AlbumResponse: Codable {
+    let items: [Album]
+}
+
 struct AlbumTracksResponse: Codable {
     let href: String?
     let limit: Int?

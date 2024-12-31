@@ -9,6 +9,7 @@ import Foundation
 
 final class TrackApiCaller {
     static let shared = TrackApiCaller()
+    
     private init() {}
     
     struct Constants {
@@ -77,6 +78,9 @@ final class TrackApiCaller {
         }
     }
     
+    
+
+    
 
     
     private func perform<T: Decodable>(request: URLRequest, decoding type: T.Type, completion: @escaping (Result<T, Error>) -> Void) {
@@ -98,37 +102,66 @@ final class TrackApiCaller {
         task.resume()
     }
     
-    func searchTrack(query: String, completion: @escaping (Result<[String], Error>) -> Void) {
-        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let urlString = "\(TrackApiCaller.Constants.baseAPIURL)/search?q=\(encodedQuery)&type=track"
+//    func searchTracks(query: String, completion: @escaping (Result<[String], Error>) -> Void) {
+//        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+//        let urlString = "\(TrackApiCaller.Constants.baseAPIURL)/search?q=\(encodedQuery)&type=track"
+//        
+//        AuthManager.shared.createRequest(
+//            with: URL(string: urlString),
+//            type: .GET
+//        ) { request in
+//            TrackApiCaller.shared.perform(request: request, decoding: SearchResponse.self) { result in
+//                switch result {
+//                case .success(let searchResponse):
+//                    let trackIDs = searchResponse.tracks.items?.map { $0.id }
+//                    completion(.success(trackIDs!))
+//                case .failure(let error):
+//                    completion(.failure(error))
+//                }
+//            }
+//        }
+//    }
+    
+    func searchTrackByName(name: String, completion: @escaping (Result<String, Error>) -> Void) {
+        guard let url = URL(string: "\(Constants.baseAPIURL)/search?type=track&q=\(name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") else {
+            completion(.failure(ApiError.invalidURL))
+            return
+        }
         
-        AuthManager.shared.createRequest(
-            with: URL(string: urlString),
-            type: .GET
-        ) { request in
-            TrackApiCaller.shared.perform(request: request, decoding: SearchResponse.self) { result in
-                switch result {
-                case .success(let searchResponse):
-                    let trackIDs = searchResponse.tracks.items?.map { $0.id }
-                    completion(.success(trackIDs!))
-                case .failure(let error):
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                
+                do {
+                    let result = try JSONDecoder().decode(SearchTrackResponse.self, from: data)
+                    if let firstTrack = result.tracks.items?.first  {
+                        completion(.success(firstTrack.id))
+                    } else {
+                        completion(.failure(ApiError.decodeError))
+                    }
+                } catch {
                     completion(.failure(error))
                 }
             }
+            task.resume()
         }
     }
+
+   
+
+    
     
     func searchTracks(query: String, completion: @escaping (Result<[String], Error>) -> Void) {
-        // URL encode the query
         let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let urlString = "\(TrackApiCaller.Constants.baseAPIURL)/search?q=\(encodedQuery)&type=track"
         
-        // Create and perform the request
         AuthManager.shared.createRequest(
             with: URL(string: urlString),
             type: .GET
         ) { request in
-            // Perform the request and decode the response
             let task = URLSession.shared.dataTask(with: request) { data, _, error in
                 guard let data = data, error == nil else {
                     completion(.failure(ApiError.failedToGetData))
@@ -136,7 +169,6 @@ final class TrackApiCaller {
                 }
                 do {
                     let searchResponse = try JSONDecoder().decode(SearchResponse.self, from: data)
-                    // Map the track IDs from the search results
                     let trackIDs = searchResponse.tracks.items?.map { $0.id }
                     completion(.success(trackIDs!))
                 } catch {
@@ -185,7 +217,67 @@ final class TrackApiCaller {
             task.resume()
         }
     }
-
+    
+    
+    
+    func fetchRecommendations(
+        seedArtists: [String],
+        seedTracks: [String],
+        seedGenres: [String],
+        limit: Int = 20,
+        completion: @escaping (Result<[Track], Error>) -> Void
+    ) {
+        var components = URLComponents(string: "\(Constants.baseAPIURL)/recommendations")
+        components?.queryItems = [
+            URLQueryItem(name: "seed_artists", value: seedArtists.joined(separator: ",")),
+            URLQueryItem(name: "seed_tracks", value: seedTracks.joined(separator: ",")),
+            URLQueryItem(name: "seed_genres", value: seedGenres.joined(separator: ",")),
+            URLQueryItem(name: "limit", value: "\(limit)")
+        ]
+        
+        guard let url = components?.url else {
+            completion(.failure(ApiError.invalidURL))
+            return
+        }
+        
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            self.perform(request: request, decoding: TrackRecommendationsResponse.self) { result in
+                switch result {
+                case .success(let response):
+                    completion(.success(response.tracks))
+                case .failure(let error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    func parseRecommendationsResponse(data: Data) {
+        do {
+            let decoder = JSONDecoder()
+            let response = try decoder.decode(TrackRecommendationsResponse.self, from: data)
+            
+            // Print details of the seeds
+            for seed in response.seeds {
+                print("Seed ID: \(seed.id), Type: \(seed.type)")
+            }
+            
+            // Print details of the tracks
+            for track in response.tracks {
+                print("Track Name: \(track.name)")
+                print("Artists: \(track.artists?.map { $0.name }.joined(separator: ", ") ?? "Unknown Artist")")
+                print("Album: \(track.album?.name ?? "Unknow Album name")")
+                print("Duration: \((track.durationMs ?? 0 ) / 1000) seconds")
+                print("Popularity: \(track.popularity ?? 0)")
+                if let previewUrl = track.previewUrl {
+                    print("Preview URL: \(previewUrl)")
+                }
+                print("---------------------------")
+            }
+        } catch {
+            print("Failed to parse recommendations: \(error.localizedDescription)")
+        }
+    }
 }
 
 

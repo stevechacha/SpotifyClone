@@ -9,17 +9,68 @@ import UIKit
 
 class PlayerListViewController: UIViewController {
 
+    var playlist: PlaylistItem
+    var tracks: [PlaylistItemsResponse] = [] // To store the fetched tracks
+
+    private let tableView: UITableView = {
+        let tableView = UITableView()
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        return tableView
+    }()
+
+    // Initialize with a playlist
+    init(playlist: PlaylistItem) {
+        self.playlist = playlist
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = playlist.name
+        view.backgroundColor = .systemBackground
         
+        // Setup table view
+        setupTableView()
+
+        // Fetch tracks for this playlist
+        fetchPlaylistTracks()
         getUserPlaylists()
-        // Do any additional setup after loading the view.
+    }
+
+    // Setup TableView for displaying tracks
+    func setupTableView() {
+        view.addSubview(tableView)
+        tableView.delegate = self
+        tableView.dataSource = self
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
     }
     
+    func fetchPlaylistTracks() {
+        PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlist.id) { [weak self] result in
+            switch result {
+            case .success(let tracksResponse):
+                self?.tracks = tracksResponse.items
+                DispatchQueue.main.async {
+                    self?.tableView.reloadData()
+                }
+            case .failure(let error):
+                print("Failed to fetch tracks: \(error)")
+            }
+        }
+    }
     
     func getUserPlaylists(){
         var userID: String = ""
-        var playlistID: String = ""
+        var playlistID: String = playlist.id
 
         PlaylistApiCaller.shared.getCurrentUsersPlaylist { result in
             switch result {
@@ -74,9 +125,7 @@ class PlayerListViewController: UIViewController {
     
     
     func getPlaylists(){
-        let apiCaller = PlaylistApiCaller()
-
-        apiCaller.getCurrentUsersPlaylist { result in
+        PlaylistApiCaller.shared.getCurrentUsersPlaylist { result in
             switch result {
             case .success(let playlistsResponse):
                 // Access the playlists array
@@ -99,20 +148,19 @@ class PlayerListViewController: UIViewController {
     }
     
     func fetchPlaylistsAndTracks() {
-        let apiCaller = PlaylistApiCaller()
 
-        apiCaller.getCurrentUsersPlaylist { result in
+        PlaylistApiCaller.shared.getCurrentUsersPlaylist { result in
             switch result {
             case .success(let playlistsResponse):
-                for playlist in playlistsResponse.items! {
+                for playlist in playlistsResponse.items ?? [] {
                     print("Playlist Name: \(playlist.name)")
                     
                     // Fetch tracks for each playlist
-                    apiCaller.getPlaylistTracks(playlistID: playlist.id) { tracksResult in
+                    PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlist.id) { tracksResult in
                         switch tracksResult {
                         case .success(let tracksResponse):
                             for trackItem in tracksResponse.items {
-                                print("Track: \(trackItem.track.name) by \(trackItem.track.artists?.map { $0.name }.joined(separator: ", "))")
+                                print("Track: \(trackItem.track.name) by \(trackItem.track.artists?.map { $0.name }.joined(separator: ", ") ?? "Unknown Track name")")
                             }
                         case .failure(let error):
                             print("Failed to fetch tracks: \(error)")
@@ -124,16 +172,20 @@ class PlayerListViewController: UIViewController {
             }
         }
     }
-
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }
+
+extension PlayerListViewController: UITableViewDelegate, UITableViewDataSource {
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return tracks.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let track = tracks[indexPath.row]
+        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "TrackCell")
+        cell.textLabel?.text = track.track.name
+        cell.detailTextLabel?.text = track.track.artists?.map { $0.name }.joined(separator: ", ")
+        return cell
+    }
+}
+
