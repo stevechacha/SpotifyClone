@@ -14,7 +14,7 @@ class TabBarViewController: UITabBarController {
         
         let homeController = HomeViewController()
         let searchController = SearchViewController()
-        let libraryController = SavedItemsViewController()
+        let libraryController = LibraryViewController()
         let profileController = ProfileViewController()
         
         homeController.title = "Browse"

@@ -8,7 +8,7 @@
 
 import UIKit
 
-enum SavedItemType {
+enum SavedItemTypea {
     case album(Album)
     case playlist(PlaylistItem)
     case podcast(UsersSavedShowsItems) // Assuming you have a `PodcastItem` model
