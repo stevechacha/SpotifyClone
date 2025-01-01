@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Tracks: Codable {
+struct Tracks: Codable  {
     let href: String?
     let limit: Int?
     let next: String?

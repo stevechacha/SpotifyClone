@@ -6,7 +6,7 @@
 //
 
 //Get Several Artists
-struct SpotifyArtistsResponse: Codable {
+struct SpotifyArtistsResponse: Codable  {
     let artists: [Artist]
 }
 

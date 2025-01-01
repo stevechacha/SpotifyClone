@@ -33,7 +33,7 @@ class ChaptersViewController: UIViewController {
 //            }
 //        }
         
-        ChapterApiCaller.shared.getUserSavedShows { result in
+        ChapterApiCaller.shared.getUserSavedPodCasts { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
@@ -65,7 +65,7 @@ class ChaptersViewController: UIViewController {
         // 2. Function to fetch details for each show ID
         func fetchShowDetails(for showIds: [String]) {
             for showId in showIds {
-                ChapterApiCaller.shared.getShowDetail(showID: showId) { result in
+                ChapterApiCaller.shared.getPodcastDetails(showID: showId) { result in
                     switch result {
                     case .success(let showDetail):
                         // Successfully fetched show details, now fetch episodes
@@ -81,7 +81,7 @@ class ChaptersViewController: UIViewController {
 
         // 3. Function to fetch episodes for a given show
         func fetchEpisodes(for showId: String) {
-            ChapterApiCaller.shared.getShowEpisodes(showID: showId) { result in
+            ChapterApiCaller.shared.getPodcastEpisodes(showID: showId) { result in
                 switch result {
                 case .success(let episodesResponse):
                     let episodeIds = episodesResponse.episodes?.compactMap { $0.id } ?? []
@@ -163,7 +163,7 @@ class ChaptersViewController: UIViewController {
 //            }
 //        }
         
-        ChapterApiCaller.shared.getUserSavedShows { result in
+        ChapterApiCaller.shared.getUserSavedPodCasts { result in
             switch result {
             case .success(let savedShows):
                 print("User's Saved Shows: \(savedShows)")
@@ -198,7 +198,7 @@ class ChaptersViewController: UIViewController {
                     print("Found Show: \(firstShow.name ?? "Unknown First Show Name") (ID: \(firstShow.id ?? "NO ShowID"))")
                     
                     // Step 2: Get Episodes of the Show
-                    ChapterApiCaller.shared.getShowEpisodes(showID: firstShow.id!) { result in
+                    ChapterApiCaller.shared.getPodcastEpisodes(showID: firstShow.id!) { result in
                         switch result {
                         case .success(let episodesResponse):
                             // Access the 'items' property for episodes

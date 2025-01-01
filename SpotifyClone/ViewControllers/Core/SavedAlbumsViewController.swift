@@ -127,7 +127,7 @@ class SavedItemsViewController: UIViewController, UITableViewDelegate, UITableVi
 
         // Fetch Saved Podcasts
         group.enter()
-        ChapterApiCaller.shared.getUserSavedShows { [weak self] result in
+        ChapterApiCaller.shared.getUserSavedPodCasts { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):

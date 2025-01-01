@@ -48,7 +48,7 @@ struct PlaylistItemsResponse: Codable {
 
 
 // MARK: - Playlist
-struct PlaylistItem: Codable {
+struct PlaylistItem: Codable , Identifiable {
     let collaborative: Bool?
     let description: String?
     let externalUrls: ExternalURLs?

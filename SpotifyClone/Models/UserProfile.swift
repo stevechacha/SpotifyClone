@@ -24,33 +24,45 @@ struct UserProfile: Codable {
 enum ApiError: LocalizedError {
     case code
     case tokenNotFound
+    case invalidInput
     case invalidURL
     case failedToGetData
     case decodeError
-    case invalidResponse
+    case encodingError(String) // Add this case for encoding errors
+    case invalidResponse(statusCode: Int) // Now properly expects an Int argument
     case noGenresAvailable
-    case apiError(String) // New case for handling API errors
-    case decodingError(String) // Add this case to handle decoding errors
+    case apiError(String) // Handles specific API errors with a message
+    case decodingError(String) // Correctly named to handle decoding errors
+    case unknownError(String) // Handles unexpected errors with a message
 
     var errorDescription: String? {
         switch self {
-        case .code : return "api code error"
-        case .apiError(let message): // Use the associated value
-            return "API Error: \(message)"
-        case .decodingError(let message): // Use the associated value
-            return "Decoding Error: \(message)"
-        case .invalidResponse:
-            return "The server returned an invalid response."
+        case .code:
+            return "API code error."
         case .tokenNotFound:
             return "Failed to find the token."
         case .invalidURL:
             return "Invalid URL."
         case .failedToGetData:
-            return "No data found."
+            return "Failed to retrieve data."
         case .decodeError:
             return "Failed to decode data."
+        case .encodingError(let message):
+            return "Encoding Error: \(message)"
+        case .invalidResponse(let statusCode):
+            return "The server returned an invalid response (HTTP \(statusCode))."
         case .noGenresAvailable:
             return "No genres available in the response."
+        case .apiError(let message):
+            return "API Error: \(message)"
+        case .decodingError(let message):
+            return "Decoding Error: \(message)"
+        case .unknownError(let message):
+            return "An unknown error occurred: \(message)"
+        case .invalidInput:
+            return "Invalid Input"
         }
     }
 }
+
+

@@ -9,52 +9,40 @@
 import Foundation
 
 final class ArtistApiCaller {
-    
-    static let shared = ArtistApiCaller()
-    
 
-    struct Constants {
+    static let shared = ArtistApiCaller()
+
+    private struct Constants {
         static let artistBaseUrl = "https://api.spotify.com/v1/artists"
-        static let baseAPURL = "https://api.spotify.com/v1"
+        static let baseAPIUrl = "https://api.spotify.com/v1"
     }
-    
+
     private let decoder: JSONDecoder
-    
-    init() {
+
+    private init() {
         self.decoder = JSONDecoder()
         self.decoder.keyDecodingStrategy = .useDefaultKeys
-        decoder.dateDecodingStrategy = .iso8601 // If using Date type for lastUpdated
+        self.decoder.dateDecodingStrategy = .iso8601
     }
-    
 
-    
-    func getRecommendationsArtist(genres: Set<String>, seedArtists: [String], seedTracks: [String], completion: @escaping (Result<RecommendationsResponse, Error>) -> Void) {
-        // Construct URL parameters
-        let seedArtistsParam = seedArtists.joined(separator: ",")
-        let seedGenresParam = genres.joined(separator: ",")
-        let seedTracksParam = seedTracks.joined(separator: ",")
-        
-        // Build the full URL
-        let urlString = "\(Constants.baseAPURL)/recommendations?seed_artists=\(seedArtistsParam)&seed_genres=\(seedGenresParam)&seed_tracks=\(seedTracksParam)"
-        
-        guard let url = URL(string: urlString) else {
-            completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
-            return
-        }
-        
+    // MARK: - Helper Methods
+
+    private func performRequest<T: Decodable>(
+        url: URL,
+        responseType: T.Type,
+        completion: @escaping (Result<T, Error>) -> Void
+    ) {
         AuthManager.shared.createRequest(with: url, type: .GET) { request in
             let task = URLSession.shared.dataTask(with: request) { data, _, error in
                 guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
+                    completion(.failure(error ?? ApiError.failedToGetData))
                     return
                 }
                 
                 do {
-                    let result = try self.decoder.decode(RecommendationsResponse.self, from: data)
-                    print("Recommendation Artist : \(result)")
-                    completion(.success(result))
+                    let response = try self.decoder.decode(T.self, from: data)
+                    completion(.success(response))
                 } catch {
-                    print("Recommended Artist Decoding error: \(error)")
                     completion(.failure(error))
                 }
             }
@@ -62,327 +50,130 @@ final class ArtistApiCaller {
         }
     }
 
-    
+    private func constructURL(base: String, parameters: [String: String]) -> URL? {
+        var components = URLComponents(string: base)
+        components?.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+        return components?.url
+    }
+
+
 
     func getSeveralArtists(
         artistIDs: [String],
         completion: @escaping (Result<SpotifyArtistsResponse, Error>) -> Void
     ) {
-        let ids = artistIDs.joined(separator: ",")
-        let urlString = "https://api.spotify.com/v1/artists?ids=\(ids)"
-        
-        guard let url = URL(string: urlString) else {
+        guard let url = constructURL(
+            base: Constants.artistBaseUrl,
+            parameters: ["ids": artistIDs.joined(separator: ",")]
+        ) else {
             completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
             return
         }
-        
-        // Create the request
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-//                // Print the raw JSON response for debugging
-//                if let jsonString = String(data: data, encoding: .utf8) {
-//                    print("Raw JSON Response: \(jsonString)")
-//                }
-                
-                // Decode the response
-                do {
-                    let response = try JSONDecoder().decode(SpotifyArtistsResponse.self, from: data)
-                    print("Several Artists \(response)")
-                    completion(.success(response))
-                } catch {
-                    print(" Several Decoding error: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
+
+        performRequest(url: url, responseType: SpotifyArtistsResponse.self, completion: completion)
     }
 
-    
-    public func getArtistDetails(artistID: String, completion: @escaping (Result<SpotifyArtistsDetailResponse, Error>) -> Void) {
-        // Ensure the URL is constructed dynamically with the artist's ID
+    func getArtistDetails(
+        artistID: String,
+        completion: @escaping (Result<SpotifyArtistsDetailResponse, Error>) -> Void
+    ) {
         guard let url = URL(string: "\(Constants.artistBaseUrl)/\(artistID)") else {
             completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
             return
         }
-        
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-//                // Debug: Print raw JSON response
-//                if let jsonString = String(data: data, encoding: .utf8) {
-//                    print("Raw JSON Response: \(jsonString)")
-//                }
-                
-                do {
-                    // Decode JSON response into your `SpotifyArtistsDetailResponse` model
-                    let response = try JSONDecoder().decode(SpotifyArtistsDetailResponse.self, from: data)
-                    print("Artist Details :\(response)")
-                    completion(.success(response))
-                } catch {
-                    print("Artist Details Decoding error: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
+
+        performRequest(url: url, responseType: SpotifyArtistsDetailResponse.self, completion: completion)
     }
 
-
-    
-
-    public func getArtistAlbums(artistID: String, completion: @escaping (Result<SpotifyArtistsAlbumsResponse, Error>) -> Void) {
-        // Correct URL construction
-        let urlString = "\(Constants.artistBaseUrl)/\(artistID)/albums"
-        
-        guard let url = URL(string: urlString) else {
-            completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
-            return
-        }
-        
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-                do {
-                    let response = try self.decoder.decode(SpotifyArtistsAlbumsResponse.self, from: data)
-                    print("Artist Albums : \(response)")
-                    completion(.success(response))
-                } catch {
-                    print("Artist Albums Decoding error: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
-    }
-
-    func fetchAlbumsOfArtist(artistID: String, completion: @escaping (Result<SpotifyArtistRelatedArtistsResponse, Error>) -> Void) {
-        let urlString = "https://api.spotify.com/v1/artists/\(artistID)/albums"
-        guard let url = URL(string: urlString) else {
+    func getArtistAlbums(
+        artistID: String,
+        completion: @escaping (Result<SpotifyArtistsAlbumsResponse, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(Constants.artistBaseUrl)/\(artistID)/albums") else {
             completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
             return
         }
 
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-
-                guard let data = data else {
-                    completion(.failure(NSError(domain: "No data", code: 500, userInfo: nil)))
-                    return
-                }
-
-//                // Print the raw JSON response for debugging
-//                if let jsonString = String(data: data, encoding: .utf8) {
-//                    print("Raw JSON Response: \(jsonString)")
-//                }
-
-                do {
-                    let response = try JSONDecoder().decode(SpotifyArtistRelatedArtistsResponse.self, from: data)
-                    completion(.success(response))
-                } catch {
-                    print("Decoding error: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
+        performRequest(url: url, responseType: SpotifyArtistsAlbumsResponse.self, completion: completion)
     }
 
 
-    
 
-    public func getArtistsTopTracks(for artistID: String, market: String = "us", completion: @escaping (Result<SpotifyArtistsTopTracksResponse, Error>) -> Void) {
-        // Construct the URL with the artist ID and the market query parameter
-        let urlString = "https://api.spotify.com/v1/artists/\(artistID)/top-tracks?market=\(market)"
-        
-        guard let url = URL(string: urlString) else {
+    func getArtistsTopTracks(
+        for artistID: String,
+        market: String = "US",
+        completion: @escaping (Result<SpotifyArtistsTopTracksResponse, Error>) -> Void
+    ) {
+        guard let url = constructURL(
+            base: "\(Constants.artistBaseUrl)/\(artistID)/top-tracks",
+            parameters: ["market": market]
+        ) else {
             completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
             return
         }
-        
-        // Create a request
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-//                // Debugging: Print raw JSON response
-//                if let jsonString = String(data: data, encoding: .utf8) {
-//                    print("Raw JSON Response: \(jsonString)")
-//                }
-//                
-                
-                do {
-                    let trackResponse = try JSONDecoder().decode(SpotifyArtistsTopTracksResponse.self, from: data)
-                    print("Decoded response: \(trackResponse)")
-                    completion(.success(trackResponse))
-                } catch {
-                    print("Error decoding top tracks: \(error)")
-                    // Optionally log the raw data here to inspect
-                    if let jsonString = String(data: data, encoding: .utf8) {
-                        print("Raw JSON response: \(jsonString)")
-                    }
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
+
+        performRequest(url: url, responseType: SpotifyArtistsTopTracksResponse.self, completion: completion)
     }
 
-    
-  
-    public func getArtistsRelatedArtist(artistID: String, completion: @escaping (Result<SpotifyArtistRelatedArtistsResponse, Error>) -> Void) {
-        let urlString = "https://api.spotify.com/v1/artists/\(artistID)/related-artists"
-        
-        guard let url = URL(string: urlString) else {
-            completion(.failure(ApiError.failedToGetData))
-            return
-        }
-        
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-                do {
-                    // Decode the response into the correct model
-                    let response = try JSONDecoder().decode(SpotifyArtistRelatedArtistsResponse.self, from: data)
-                    print("Artist Related Artist \(response)")
-                    completion(.success(response))
-                } catch {
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
-    }
-
-
-    
-    func searchArtists(query: String, completion: @escaping (Result<[Artist], Error>) -> Void) {
-        let urlString = "https://api.spotify.com/v1/search?q=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&type=artist&limit=10"
-        
-        guard let url = URL(string: urlString) else {
+    func getArtistsRelatedArtists(
+        artistID: String,
+        completion: @escaping (Result<SpotifyArtistRelatedArtistsResponse, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(Constants.artistBaseUrl)/\(artistID)/related-artists") else {
             completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
             return
         }
-        
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-//                // Debugging raw JSON response
-//                if let jsonString = String(data: data, encoding: .utf8) {
-//                    print("Search Artists Raw JSON Response: \(jsonString)")
-//                }
-                
-                // Decode the JSON response
-                do {
-                    let response = try JSONDecoder().decode(SpotifySearchResponse.self, from: data)
-                    print(response.artists)
-                    completion(.success(response.artists.items))
-                } catch {
-                    print("Decoding error: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
+
+        performRequest(url: url, responseType: SpotifyArtistRelatedArtistsResponse.self, completion: completion)
     }
     
-    public func searchArtist(by name: String, completion: @escaping (Result<String, Error>) -> Void) {
-        let urlString = "https://api.spotify.com/v1/search?q=\(name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&type=artist&limit=1"
-        
-        guard let url = URL(string: urlString) else {
+
+    func searchArtists(
+        query: String,
+        completion: @escaping (Result<[Artist], Error>) -> Void
+    ) {
+        guard let url = constructURL(
+            base: "\(Constants.baseAPIUrl)/search",
+            parameters: [
+                "q": query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "",
+                "type": "artist",
+                "limit": "10"
+            ]
+        ) else {
             completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
             return
         }
-        
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-                do {
-                    let response = try JSONDecoder().decode(SpotifySearchResponse.self, from: data)
-                    if let artist = response.artists.items.first {
-                        completion(.success(artist.id))
-                    } else {
-                        completion(.failure(NSError(domain: "Artist not found", code: 404, userInfo: nil)))
-                    }
-                } catch {
-                    print("Decoding error: \(error)")
-                    completion(.failure(error))
-                }
+
+        performRequest(url: url, responseType: SpotifySearchResponse.self) { result in
+            switch result {
+            case .success(let response):
+                completion(.success(response.artists.items))
+            case .failure(let error):
+                completion(.failure(error))
             }
-            task.resume()
         }
     }
     
-    func searchArtistByName(artistName: String, completion: @escaping (Result<String, Error>) -> Void) {
-        let urlString = "https://api.spotify.com/v1/search?q=\(artistName)&type=artist"
-        guard let url = URL(string: urlString) else {
-            completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
-            return
-        }
-        
-        // Use createRequest to prepare the request
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
+
+    func searchArtistByName(
+        name: String,
+        completion: @escaping (Result<String, Error>) -> Void
+    ) {
+        searchArtists(query: name) { result in
+            switch result {
+            case .success(let artists):
+                if let firstArtist = artists.first {
+                    completion(.success(firstArtist.id))
+                } else {
+                    completion(.failure(NSError(domain: "Artist not found", code: 404, userInfo: nil)))
                 }
-                
-                guard let data = data else {
-                    completion(.failure(NSError(domain: "No data", code: 500, userInfo: nil)))
-                    return
-                }
-                
-                do {
-                    // Decode the artist search response
-                    let response = try JSONDecoder().decode(SpotifySearchResponse.self, from: data)
-                    if let artist = response.artists.items.first {
-                        completion(.success(artist.id))
-                    } else {
-                        completion(.failure(NSError(domain: "Artist not found", code: 404, userInfo: nil)))
-                    }
-                } catch {
-                    completion(.failure(error))
-                }
+            case .failure(let error):
+                completion(.failure(error))
             }
-            task.resume()
         }
     }
-
-
 }
+
     
 
 

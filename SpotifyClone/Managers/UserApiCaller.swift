@@ -78,29 +78,39 @@ final class UserApiCaller {
         }
     }
     
-    func getUserTopItems(type: String) {
-        guard let url = URL(string: "\(Constants.baseAPURL)/me/top/\(type)") else {
-            print("Invalid URL")
-            return
-        }
+    func getUserTopItems(type: String, limit: Int = 20, completion: @escaping (Result<[TopItem], Error>) -> Void) {
+        var items: [TopItem] = []
+        var nextURL: URL? = URL(string: "\(Constants.baseAPURL)/me/top/\(type)?limit=\(limit)")
 
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    print("Failed to fetch top \(type): \(error.localizedDescription)")
-                    return
-                }
-
-                guard let data = data else {
-                    print("No data received")
-                    return
-                }
-
-                self.parseTopItemsResponse(data: data)
+        func fetchNextPage() {
+            guard let url = nextURL else {
+                completion(.success(items)) // Return all accumulated items
+                return
             }
-            task.resume()
+
+            AuthManager.shared.createRequest(with: url, type: .GET) { request in
+                let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                    guard let data = data, error == nil else {
+                        completion(.failure(ApiError.failedToGetData))
+                        return
+                    }
+
+                    do {
+                        let response = try JSONDecoder().decode(TopItemsResponse.self, from: data)
+                        items.append(contentsOf: response.items ?? [])
+                        nextURL = response.next.flatMap { URL(string: $0) }
+                        fetchNextPage() // Fetch the next page
+                    } catch {
+                        completion(.failure(error))
+                    }
+                }
+                task.resume()
+            }
         }
+
+        fetchNextPage()
     }
+
     
     func parseTopItemsResponse(data: Data) {
         do {

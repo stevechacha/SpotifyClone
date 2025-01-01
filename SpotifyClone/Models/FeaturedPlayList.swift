@@ -7,8 +7,3 @@
 
 import Foundation
 
-
-struct FeaturedPlayListResponse: Codable {
-    let message: String?
-    let playlists: Playlists?
-}

@@ -17,7 +17,7 @@ struct Albums: Codable {
 }
 
 ////Get Album
-struct Album: Codable {
+struct Album: Codable  {
     let albumType: String?
     let totalTracks: Int?
     let availableMarkets: [String]?

@@ -82,7 +82,7 @@ class PodcastDetailViewController: UIViewController, UITableViewDelegate, UITabl
         errorLabel.isHidden = true
         loadingSpinner.startAnimating()
         
-        ChapterApiCaller.shared.getShowEpisodes(showID: podcast.show.id ?? "") { [weak self] result in
+        ChapterApiCaller.shared.getPodcastEpisodes(showID: podcast.show.id ?? "") { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 self?.loadingSpinner.stopAnimating()

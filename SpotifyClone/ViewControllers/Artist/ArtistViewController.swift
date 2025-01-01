@@ -26,7 +26,7 @@ class ArtistViewController: UIViewController {
     func getArtistsTopTracks() {
         for artistName in artistNames {
             // Step 1: Search for the artist by name
-            ArtistApiCaller.shared.searchArtist(by: artistName) { result in
+            ArtistApiCaller.shared.searchArtistByName(name: artistName) { result in
                 switch result {
                 case .success(let artistID):
                     print("Artist ID for \(artistName): \(artistID)")
@@ -72,7 +72,7 @@ class ArtistViewController: UIViewController {
     
     func fetchArtistsDetails() {
         for artistName in artistNames {
-            ArtistApiCaller.shared.searchArtist(by: artistName) { result in
+            ArtistApiCaller.shared.searchArtistByName(name: artistName) { result in
                 switch result {
                 case .success(let artistID):
                     print("Artist ID for \(artistName): \(artistID)")
@@ -119,20 +119,20 @@ class ArtistViewController: UIViewController {
         
     func getArtistsRelatedArtist(){
         for artistName in artistNames {
-            ArtistApiCaller.shared.searchArtistByName(artistName: artistName) { result in
+            ArtistApiCaller.shared.searchArtistByName(name: artistName) { result in
                 switch result {
                 case .success(let artistID):
                     print("Artist ID: \(artistID)")
                     
                     // Now, fetch albums using the artist ID
-                    ArtistApiCaller.shared.fetchAlbumsOfArtist(artistID: artistID) { albumResult in
+                    ArtistApiCaller.shared.getArtistAlbums(artistID: artistID) { albumResult in
                         switch albumResult {
                         case .success(let albums):
-                            for album in albums.artists ?? [] {
+                            for album in albums.items ?? [] {
                                 print("Album: \(album.name ?? "Unknown Album")")
                                 
                                 // Fetch details of the first album
-                                AlbumApiCaller.shared.getAlbumDetails(albumID: album.id) { detailResult in
+                                AlbumApiCaller.shared.getAlbumDetails(albumID: album.id ?? "") { detailResult in
                                     switch detailResult {
                                     case .success(let albumDetail):
                                         print("Album Details: \(albumDetail.name ?? "Unknown Album Details")")

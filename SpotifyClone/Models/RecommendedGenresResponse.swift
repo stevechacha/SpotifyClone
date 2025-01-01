@@ -9,6 +9,10 @@ import Foundation
 
 struct RecommendedGenresResponse : Codable {
     let genres: [String]
+    
+    enum CodingKeys: CodingKey {
+        case genres
+    }
 }
 
 

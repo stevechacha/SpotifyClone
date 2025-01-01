@@ -7,6 +7,6 @@
 
 import Foundation
 // Response model for available genres
-struct GenreSeedsResponse: Codable {
+struct GenreSeedsResponse: Decodable {
     let genres: [String]
 }

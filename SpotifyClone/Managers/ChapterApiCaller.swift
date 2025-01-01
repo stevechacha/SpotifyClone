@@ -16,45 +16,40 @@ final class ChapterApiCaller {
     
     struct Constants {
         static let baseAPURL = "https://api.spotify.com/v1"
-
-    }
-    
-    
-    
-    // MARK: - API Error Enum
-    enum ApiError: Error {
-        case invalidURL
-        case failedToGetData
-        case decodingError(String)
+        
     }
     
     
     
     // MARK: - Generic API Fetch Function
     private func fetch<T: Decodable>(
-        url: String,
+        endpoint: String,
         type: AuthManager.HTTPMethod,
         responseType: T.Type,
         completion: @escaping (Result<T, Error>) -> Void
     ) {
-        guard let url = URL(string: url) else {
+        let urlString = Constants.baseAPURL + endpoint
+        guard let url = URL(string: urlString) else {
             completion(.failure(ApiError.invalidURL))
             return
         }
         
         AuthManager.shared.createRequest(with: url, type: type) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    completion(.failure(ApiError.apiError(error.localizedDescription)))
+                    return
+                }
+                
+                guard let data = data else {
                     completion(.failure(ApiError.failedToGetData))
                     return
                 }
                 
                 do {
                     let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                    print(decodedResponse)
                     completion(.success(decodedResponse))
                 } catch {
-                    print(error)
                     completion(.failure(ApiError.decodingError(error.localizedDescription)))
                 }
             }
@@ -62,31 +57,35 @@ final class ChapterApiCaller {
         }
     }
     
+    
+    
     // MARK: - Fetch Shows
-    public func getSeveralShow(ids: [String], completion: @escaping (Result<ShowsResponse, Error>) -> Void) {
+    public func getSeveralShows(ids: [String], completion: @escaping (Result<ShowsResponse, Error>) -> Void) {
         let idsString = ids.joined(separator: ",")
         fetch(
-            url: "https://api.spotify.com/v1/shows?ids=\(idsString)",
+            endpoint: "/shows?ids=\(idsString)",
             type: .GET,
             responseType: ShowsResponse.self,
             completion: completion
         )
     }
     
-    public func getShowDetail(showID: String, completion: @escaping (Result<Show, Error>) -> Void) {
+    
+    public func getPodcastDetails(showID: String, completion: @escaping (Result<Show, Error>) -> Void) {
         fetch(
-            url: "https://api.spotify.com/v1/shows/\(showID)",
+            endpoint: "/shows/\(showID)",
             type: .GET,
             responseType: Show.self,
             completion: completion
         )
     }
     
+    
     // MARK: - Fetch Episodes
     public func getSeveralEpisodes(ids: [String], completion: @escaping (Result<EpisodesResponse, Error>) -> Void) {
         let idsString = ids.joined(separator: ",")
         fetch(
-            url: "https://api.spotify.com/v1/episodes?ids=\(idsString)",
+            endpoint: "/episodes?ids=\(idsString)",
             type: .GET,
             responseType: EpisodesResponse.self,
             completion: completion
@@ -94,18 +93,21 @@ final class ChapterApiCaller {
     }
     
     public func getEpisodeDetails(episodeID: String, completion: @escaping (Result<Episode, Error>) -> Void) {
-        fetch(url: "https://api.spotify.com/v1/episodes/\(episodeID)",
-              type: .GET,
-              responseType: Episode.self,
-              completion: completion
+        fetch(
+            endpoint: "/episodes/\(episodeID)",
+            type: .GET,
+            responseType: Episode.self,
+            completion: completion
         )
     }
     
-    public func getShowEpisodes(showID: String, completion: @escaping (Result<EpisodesResponse, Error>) -> Void) {
-        fetch(url: "https://api.spotify.com/v1/shows/\(showID)/episodes",
-              type: .GET,
-              responseType: EpisodesResponse.self,
-              completion: completion
+    
+    public func getPodcastEpisodes(showID: String, completion: @escaping (Result<EpisodesResponse, Error>) -> Void) {
+        fetch(
+            endpoint: "/shows/\(showID)/episodes",
+            type: .GET,
+            responseType: EpisodesResponse.self,
+            completion: completion
         )
     }
     
@@ -113,7 +115,7 @@ final class ChapterApiCaller {
     public func getSeveralChapters(ids: [String], completion: @escaping (Result<ChaptersResponse, Error>) -> Void) {
         let idsString = ids.joined(separator: ",")
         fetch(
-            url: "https://api.spotify.com/v1/chapters?ids=\(idsString)",
+            endpoint: "/chapters?ids=\(idsString)",
             type: .GET,
             responseType: ChaptersResponse.self,
             completion: completion
@@ -122,7 +124,7 @@ final class ChapterApiCaller {
     
     public func getChapterDetails(chapterID: String, completion: @escaping (Result<Chapter, Error>) -> Void) {
         fetch(
-            url: "https://api.spotify.com/v1/chapters/\(chapterID)",
+            endpoint: "/chapters/\(chapterID)",
             type: .GET,
             responseType: Chapter.self,
             completion: completion
@@ -130,105 +132,45 @@ final class ChapterApiCaller {
     }
     
     // MARK: - Fetch User's Saved Shows
-    public func getUserSavedShows(completion: @escaping (Result<UsersSavedShows, Error>) -> Void) {
-//        guard let url = URL(string: "https://api.spotify.com/v1/me/shows?limit=20") else { return }
+    public func getUserSavedPodCasts(completion: @escaping (Result<UsersSavedShows, Error>) -> Void) {
+        //        guard let url = URL(string: "https://api.spotify.com/v1/me/shows?limit=20") else { return }
         fetch(
-            url: "https://api.spotify.com/v1/me/shows",
+            endpoint: "/me/shows",
             type: .GET, responseType: UsersSavedShows.self,
             completion: completion
         )
     }
     
-
-    
-    public func getPodcastDetails(showID: String, completion: @escaping (Result<Show, Error>) -> Void) {
+    func getUserSavedEpisodes(completion: @escaping (Result<UserSavedEpisodesResponse, Error>) -> Void) {
         fetch(
-            url: "https://api.spotify.com/v1/shows/\(showID)",
-            type: .GET,
-            responseType: Show.self,
-            completion: completion
-        )
-    }
-
-    
-    public func searchPodcasts(query: String, completion: @escaping (Result<ShowsResponse, Error>) -> Void) {
-        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        fetch(
-            url: "https://api.spotify.com/v1/search?q=\(encodedQuery)&type=show",
-            type: .GET,
-            responseType: ShowsResponse.self,
+            endpoint: "/me/episodes",
+            type: .GET, responseType: UserSavedEpisodesResponse.self,
             completion: completion
         )
     }
     
-    public func getPodcastEpisodes(showID: String, completion: @escaping (Result<EpisodesResponse, Error>) -> Void) {
-        fetch(
-            url: "https://api.spotify.com/v1/shows/\(showID)/episodes",
-            type: .GET,
-            responseType: EpisodesResponse.self,
-            completion: completion
-        )
-    }
-
-
-
     
-
-    
-    // Add this method to ChapterApiCaller
     public func search(query: String, type: String, completion: @escaping (Result<SearchResponse, Error>) -> Void) {
-        // Encode the query to handle special characters
         guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             completion(.failure(ApiError.invalidURL))
             return
         }
-        
-        // Construct the search URL
-        guard let url = URL(string: "https://api.spotify.com/v1/search?q=\(encodedQuery)&type=\(type)") else {
-            completion(.failure(ApiError.invalidURL))
-            return
-        }
-        
         fetch(
-            url: "https://api.spotify.com/v1/search?q=\(encodedQuery)&type=\(type)",
+            endpoint: "/search?q=\(encodedQuery)&type=\(type)",
             type: .GET,
             responseType: SearchResponse.self,
             completion: completion
         )
     }
     
-    func getUserSavedEpisodes(completion: @escaping (Result<UserSavedEpisodesResponse, Error>) -> Void) {
-            let urlString = "https://api.spotify.com/v1/me/episodes"
-            guard let url = URL(string: urlString) else {
-                completion(.failure(ApiError.invalidURL))
-                return
-            }
-            
-            AuthManager.shared.createRequest(with: url, type: .GET) { request in
-                let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                    guard let data = data, error == nil else {
-                        completion(.failure(ApiError.failedToGetData))
-                        return
-                    }
-                    
-                    do {
-                        let decodedResponse = try JSONDecoder().decode(UserSavedEpisodesResponse.self, from: data)
-                        completion(.success(decodedResponse))
-                    } catch {
-                        completion(.failure(ApiError.decodingError(error.localizedDescription)))
-                    }
-                }
-                task.resume()
-            }
-        }
-
     
     
-    // MARK: - Search Items (Dynamic IDs)
+    
+    // MARK: - Search Items
     public func searchSpotifyItem(query: String, type: String, completion: @escaping (Result<[String], Error>) -> Void) {
-        let query = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         fetch(
-            url: "\(Constants.baseAPURL)/search?q=\(query)&type=\(type)&limit=10",
+            endpoint: "/search?q=\(encodedQuery)&type=\(type)&limit=10",
             type: .GET,
             responseType: SearchResponses.self
         ) { result in
@@ -236,14 +178,11 @@ final class ChapterApiCaller {
             case .success(let searchResponse):
                 switch type {
                 case "show":
-                    let ids = searchResponse.shows?.items.compactMap { $0.id } ?? []
-                    completion(.success(ids))
+                    completion(.success(searchResponse.shows?.items.compactMap { $0.id } ?? []))
                 case "episode":
-                    let ids = searchResponse.episodes?.items.compactMap { $0.id } ?? []
-                    completion(.success(ids))
+                    completion(.success(searchResponse.episodes?.items.compactMap { $0.id } ?? []))
                 case "chapter":
-                    let ids = searchResponse.chapters?.items.compactMap { $0.id } ?? []
-                    completion(.success(ids))
+                    completion(.success(searchResponse.chapters?.items.compactMap { $0.id } ?? []))
                 default:
                     completion(.failure(ApiError.failedToGetData))
                 }
@@ -252,5 +191,4 @@ final class ChapterApiCaller {
             }
         }
     }
-
 }

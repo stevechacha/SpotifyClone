@@ -142,7 +142,7 @@ class SearchViewController: UIViewController, UITextFieldDelegate, UITableViewDe
     
     func fetchAllArtistData(for artistName: String) {
         // Step 1: Search for the artist by name
-        ArtistApiCaller.shared.searchArtist(by: artistName) { searchResult in
+        ArtistApiCaller.shared.searchArtistByName(name: artistName) { searchResult in
             switch searchResult {
             case .success(let artistID):
                 print("Artist ID for \(artistName): \(artistID)")
@@ -182,7 +182,7 @@ class SearchViewController: UIViewController, UITextFieldDelegate, UITableViewDe
                         }
 
                         // Step 5: Fetch related artists
-                        ArtistApiCaller.shared.getArtistsRelatedArtist(artistID: artistID) { relatedArtistsResult in
+                        ArtistApiCaller.shared.getArtistsRelatedArtists(artistID: artistID) { relatedArtistsResult in
                             switch relatedArtistsResult {
                             case .success(let relatedArtists):
                                 print("Related Artists to \(artistDetails.name):")
@@ -194,20 +194,6 @@ class SearchViewController: UIViewController, UITextFieldDelegate, UITableViewDe
                                 print("Failed to fetch related artists for \(artistDetails.name): \(error)")
                             }
                         }
-
-                        // Step 6: Fetch recommendations based on the artist
-                        ArtistApiCaller.shared.getRecommendationsArtist(genres: ["pop"], seedArtists: [artistID], seedTracks: [], completion: { recommendationsResult in
-                            switch recommendationsResult {
-                            case .success(let recommendations):
-                                print("Recommended Tracks for \(artistDetails.name):")
-                                for track in recommendations.tracks {
-                                    print("- \(track.name) by \(track.artists?.map { $0.name ?? "default value" }.joined(separator: ", "))")
-                                }
-
-                            case .failure(let error):
-                                print("Failed to fetch recommendations for \(artistDetails.name): \(error)")
-                            }
-                        })
 
                     case .failure(let error):
                         print("Failed to fetch artist details: \(error)")
@@ -225,7 +211,7 @@ class SearchViewController: UIViewController, UITextFieldDelegate, UITableViewDe
         print("Fetching data for artist: \(artistName)...")
         
         // Step 1: Search for the artist by name
-        ArtistApiCaller.shared.searchArtist(by: artistName) { searchResult in
+        ArtistApiCaller.shared.searchArtistByName(name: artistName) { searchResult in
             switch searchResult {
             case .success(let artistID):
                 print("Artist ID for \(artistName): \(artistID)")
@@ -250,11 +236,11 @@ class SearchViewController: UIViewController, UITextFieldDelegate, UITableViewDe
 
                                 // Fetch detailed tracks for the first album as an example
                                 if let firstAlbum = albums.items.first {
-                                    AlbumApiCaller.shared.getAlbumTracks(albumID: firstAlbum.id!) { tracksResult in
+                                    AlbumApiCaller.shared.getAllAlbumTracks(albumID: firstAlbum.id!) { tracksResult in
                                         switch tracksResult {
                                         case .success(let tracks):
                                             print("Tracks from album '\(firstAlbum.name ?? "No Track Name")':")
-                                            for track in tracks.items {
+                                            for track in tracks {
                                                 let duration = track.durationMs.map { $0 / 1000 } ?? 0
                                                 print("- \(track.name) (Duration: \(duration) seconds)")
                                             }
@@ -284,7 +270,7 @@ class SearchViewController: UIViewController, UITextFieldDelegate, UITableViewDe
                         }
 
                         // Step 5: Fetch related artists
-                        ArtistApiCaller.shared.getArtistsRelatedArtist(artistID: artistID) { relatedArtistsResult in
+                        ArtistApiCaller.shared.getArtistsRelatedArtists(artistID: artistID) { relatedArtistsResult in
                             switch relatedArtistsResult {
                             case .success(let relatedArtists):
                                 print("Related Artists to \(artistDetails.name):")
@@ -299,30 +285,6 @@ class SearchViewController: UIViewController, UITextFieldDelegate, UITableViewDe
 
                             case .failure(let error):
                                 print("Failed to fetch related artists for \(artistDetails.name): \(error)")
-                            }
-                        }
-
-                        // Step 6: Fetch recommendations based on the artist
-                        let genres = (artistDetails.genres?.isEmpty ?? true) ? ["pop"] : artistDetails.genres ?? []
-
-                        // Convert genres array to a Set<String>
-                        let genresSet = Set(genres)
-
-                        ArtistApiCaller.shared.getRecommendationsArtist(
-                            genres: genresSet,
-                            seedArtists: [artistID],
-                            seedTracks: []
-                        ) { recommendationsResult in
-                            switch recommendationsResult {
-                            case .success(let recommendations):
-                                print("Recommended Tracks for \(artistDetails.name):")
-                                for track in recommendations.tracks {
-                                    let artists = track.artists?.map { $0.name }.joined(separator: ", ") ?? "Unknown"
-                                    print("- \(track.name) by \(artists)")
-                                }
-
-                            case .failure(let error):
-                                print("Failed to fetch recommendations for \(artistDetails.name): \(error)")
                             }
                         }
 

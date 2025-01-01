@@ -64,11 +64,11 @@ class AlbumViewController : UIViewController {
                     print("Total Tracks: \(album.totalTracks ?? 0 )")
 
                     // Step 2: Fetch tracks for the album
-                    AlbumApiCaller.shared.getAlbumTracks(albumID: album.id!) { tracksResult in
+                    AlbumApiCaller.shared.getAllAlbumTracks(albumID: album.id!) { tracksResult in
                         switch tracksResult {
                         case .success(let tracks):
                             print("Tracks for album \(album.name ?? "No Album Name"):")
-                            for track in tracks.items {
+                            for track in tracks {
                                 print("- \(track.name) (Duration: \(track.durationMs! / 1000) seconds)")
                             }
                         case .failure(let error):
@@ -106,11 +106,11 @@ class AlbumViewController : UIViewController {
                     print("Total Tracks: \(album.totalTracks ?? 0)")
 
                     // Step 2: Fetch tracks for the album
-                    AlbumApiCaller.shared.getAlbumTracks(albumID: album.id!) { tracksResult in
+                    AlbumApiCaller.shared.getAllAlbumTracks(albumID: album.id!) { tracksResult in
                         switch tracksResult {
                         case .success(let tracks):
                             print("Tracks for album \(album.name ?? "Unknow Album"):")
-                            for track in tracks.items {
+                            for track in tracks {
                                 print("- \(track.name) (Duration: \(track.durationMs! / 1000) seconds)")
                                 TrackApiCaller.shared.getTrack(trackID: track.id){ results in
                                     switch results {
@@ -167,13 +167,13 @@ class AlbumViewController : UIViewController {
 
                     
                     // Fetch tracks for the album
-                    AlbumApiCaller.shared.getAlbumTracks(albumID: albumID) { tracksResult in
+                    AlbumApiCaller.shared.getAllAlbumTracks(albumID: albumID) { tracksResult in
                         switch tracksResult {
                         case .success(let tracksResponse):
-                            if tracksResponse.items.isEmpty {
+                            if tracksResponse.isEmpty {
                                 print("No tracks found for album \(album.name ?? "Unknown Album").")
                             } else {
-                                for trackItem in tracksResponse.items {
+                                for trackItem in tracksResponse {
                                     let trackName = trackItem.name
                                     let artists = trackItem.artists?.map { $0.name }.joined(separator: ", ") ?? "Unknown Artist"
                                     print("Track: \(trackName) by \(artists)")
@@ -205,21 +205,21 @@ class AlbumViewController : UIViewController {
                 let genresSet = Set(album.genres ?? ["pop"])
 
                 // Step 2: Fetch recommendations based on genres and album ID
-                AlbumApiCaller.shared.getRecommendationsForAlbum(
-                    genres: genresSet,
-                    seedAlbums: [albumID],  // Use album ID as seed
-                    seedTracks: []          // Optionally, you can add seed tracks here
-                ) { recommendationsResult in
-                    switch recommendationsResult {
-                    case .success(let recommendations):
-                        print("Recommended Albums based on \(album.name):")
-                        for recommendedAlbum in recommendations.tracks {
-                            print("- \(recommendedAlbum.name) (Released: \(recommendedAlbum.album?.releaseDate))")
-                        }
-                    case .failure(let error):
-                        print("Failed to fetch recommendations for album \(album.name): \(error)")
-                    }
-                }
+//                AlbumApiCaller.shared.getRecommendationsForAlbum(
+//                    genres: genresSet,
+//                    seedAlbums: [albumID],  // Use album ID as seed
+//                    seedTracks: []          // Optionally, you can add seed tracks here
+//                ) { recommendationsResult in
+//                    switch recommendationsResult {
+//                    case .success(let recommendations):
+//                        print("Recommended Albums based on \(album.name):")
+//                        for recommendedAlbum in recommendations.tracks {
+//                            print("- \(recommendedAlbum.name) (Released: \(recommendedAlbum.album?.releaseDate))")
+//                        }
+//                    case .failure(let error):
+//                        print("Failed to fetch recommendations for album \(album.name): \(error)")
+//                    }
+//                }
 
             case .failure(let error):
                 print("Failed to fetch album details for ID \(albumID): \(error)")

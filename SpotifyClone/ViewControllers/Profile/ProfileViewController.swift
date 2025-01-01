@@ -72,28 +72,7 @@ class ProfileViewController: UIViewController {
         
     }
     
-    func fetchRecommendationsExample() {
-        RecommendedApiCaller.shared.getRecommendations(
-            seedArtists: ["4NHQUGzhtTLFvgF5SZesLK"],  // Example artist ID
-            seedGenres: ["classical", "country"],     // Example genres
-            seedTracks: ["0c6xIDDpzE81m2q797ordA"]    // Example track ID
-        ) { result in
-            switch result {
-            case .success(let tracks):
-                print("Recommended Tracks:")
-                for track in tracks {
-                    print("Track: \(track.name)")
-                    print("Artists: \(track.artists.map { $0.name }.joined(separator: ", "))")
-                    print("Album: \(track.album.name)")
-                    print("Preview URL: \(track.previewUrl ?? "No preview available")")
-                    print("Duration: \(track.durationMs ?? 0 / 1000) seconds")
-                    print("---")
-                }
-            case .failure(let error):
-                print("Failed to fetch recommendations: \(error)")
-            }
-        }
-    }
+    
     
 
     
@@ -218,7 +197,15 @@ class ProfileViewController: UIViewController {
     }
     
     func getTopUserItem() {
-        UserApiCaller.shared.getUserTopItems(type: "tracks")
+        UserApiCaller.shared.getUserTopItems(type: "tracks") { results in
+            switch results {
+            case .success(let success):
+                break
+            case .failure(let failure):
+                break
+            }
+            
+        }
     }
     
 

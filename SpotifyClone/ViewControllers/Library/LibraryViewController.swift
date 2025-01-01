@@ -274,7 +274,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
 
         // Fetch Saved Podcasts
         group.enter()
-        ChapterApiCaller.shared.getUserSavedShows { [weak self] result in
+        ChapterApiCaller.shared.getUserSavedPodCasts { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
@@ -303,7 +303,6 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         // Notify when all fetches are done
         group.notify(queue: .main) {
             self.hideLoadingSpinner()
-            
             self.savedItems = [
                 fetchedAlbums.map { SavedItemType.album($0) },
                 fetchedPlaylists.map { SavedItemType.playlist($0) },

@@ -9,6 +9,8 @@ import Foundation
 final class AuthManager {
     static let shared = AuthManager()
     private var refreshingToken = false
+    private var onRefreshingBlocks = [((String) -> Void)]()
+
     
     // MARK: - Constants
     struct Constants {
@@ -55,8 +57,8 @@ final class AuthManager {
         let fiveMinutesBeforeExpiration = expirationDate.addingTimeInterval(-300) // 5 minutes early
         return currentTime >= fiveMinutesBeforeExpiration
     }
-
-
+    
+    
     
     public var signInURL: URL? {
         let base = "https://accounts.spotify.com/authorize"
@@ -83,13 +85,8 @@ final class AuthManager {
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        let basicToken = "\(Constants.clientID):\(Constants.clientSecret)"
-        guard let basicData = basicToken.data(using: .utf8) else {
-            completion(false)
-            return
-        }
-        let base64String = basicData.base64EncodedString()
-        request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
+        request.setValue("Basic \(createBase64AuthHeader())", forHTTPHeaderField: "Authorization")
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         
         let bodyParameters = [
             "grant_type": "authorization_code",
@@ -99,7 +96,6 @@ final class AuthManager {
         request.httpBody = bodyParameters.map { "\($0.key)=\($0.value)" }
             .joined(separator: "&")
             .data(using: .utf8)
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
             guard let data = data, error == nil else {
@@ -119,81 +115,87 @@ final class AuthManager {
         task.resume()
     }
     
-    private var onRefreshingBlocks = [((String) -> Void)]()
     
-   
-
-        
+    
     public func withValidToken(completion: @escaping (String) -> Void) {
-        guard !refreshingToken else {
-            onRefreshingBlocks.append(completion)
-            return
-        }
-        
         if shouldRefreshToken {
             refreshAccessToken { [weak self] success in
-                if let token = self?.accessToken, success {
-                    completion(token)
+                guard let token = self?.accessToken, success else {
+                    print("Error: Unable to refresh token. User might need to reauthenticate.")
+                    return
                 }
+                completion(token)
             }
         } else if let token = accessToken {
             completion(token)
+        } else {
+            print("Error: No valid token found. Redirecting to login.")
         }
     }
-
     
-    public func withvalidToken(completion: @escaping (String) -> Void){
-        guard !refreshingToken else {
-            onRefreshingBlocks.append(completion)
-            return
-        }
-        if shouldRefreshToken {
-            refreshAccessToken { [weak self] success in
-                if let token = self?.accessToken , success {
-                    completion(token)
-                }
-            }
-        }
-        else if let token = accessToken {
-            completion(token)
-        }
-    }
+    //    public func withValidToken(completion: @escaping (String) -> Void) {
+    //        guard !refreshingToken else {
+    //            onRefreshingBlocks.append(completion)
+    //            return
+    //        }
+    //
+    //        if shouldRefreshToken {
+    //            refreshAccessToken { [weak self] success in
+    //                if let token = self?.accessToken, success {
+    //                    completion(token)
+    //                }
+    //            }
+    //        } else if let token = accessToken {
+    //            completion(token)
+    //        }
+    //    }
+    
+    
+    
+    
+    //    public func withvalidToken(completion: @escaping (String) -> Void){
+    //        guard !refreshingToken else {
+    //            onRefreshingBlocks.append(completion)
+    //            return
+    //        }
+    //        if shouldRefreshToken {
+    //            refreshAccessToken { [weak self] success in
+    //                if let token = self?.accessToken , success {
+    //                    completion(token)
+    //                }
+    //            }
+    //        }
+    //        else if let token = accessToken {
+    //            completion(token)
+    //        }
+    //    }
+    
+    
     
     
     // MARK: - Refresh Token
-    public func refreshIfNeed(completion: @escaping (Bool) -> Void) {
-        guard !refreshingToken else { return }
-//        guard shouldRefreshToken,
-//              let refreshToken = self.refreshToken,
-//              let url = URL(string: Constants.tokenAPIURL) else {
-//            completion(false)
-//            return
-//        }
-        
-        guard let refreshToken = self.refreshToken else { return }
-        
-        guard let url = URL(string: Constants.tokenAPIURL) else { return }
+    public func refreshAccessToken(completion: @escaping (Bool) -> Void) {
+        guard let refreshToken = self.refreshToken,
+              let url = URL(string: Constants.tokenAPIURL),
+              shouldRefreshToken else {
+            completion(false)
+            return
+        }
         
         refreshingToken = true
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.setValue("Basic \(createBase64AuthHeader())", forHTTPHeaderField: "Authorization")
+        
         let bodyParameters = [
             "grant_type": "refresh_token",
             "refresh_token": refreshToken
         ]
-        request.httpBody = bodyParameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&").data(using: .utf8)
-
-        let basicToken = "\(Constants.clientID):\(Constants.clientSecret)"
-        guard let basicData = basicToken.data(using: .utf8) else {
-            completion(false)
-            return
-        }
-        let base64String = basicData.base64EncodedString()
-        request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
-
-        
+        request.httpBody = bodyParameters.map { "\($0.key)=\($0.value)" }
+            .joined(separator: "&")
+            .data(using: .utf8)
         
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
             self?.refreshingToken = false
@@ -204,64 +206,25 @@ final class AuthManager {
             
             do {
                 let result = try JSONDecoder().decode(AuthResponse.self, from: data)
-                self?.onRefreshingBlocks.forEach { $0(result.access_token)}
+                self?.onRefreshingBlocks.forEach { $0(result.access_token) }
                 self?.onRefreshingBlocks.removeAll()
                 self?.cacheToken(result: result)
                 completion(true)
             } catch {
-                print("Error decoding refresh token response: \(error.localizedDescription)")
+                print("Error decoding refresh token response: \(error)")
                 completion(false)
             }
         }
         task.resume()
     }
     
-    
-    // MARK: - Refresh Token
-    public func refreshAccessToken(completion: @escaping (Bool) -> Void) {
-        guard shouldRefreshToken,
-              let refreshToken = self.refreshToken,
-              let url = URL(string: Constants.tokenAPIURL) else {
-            completion(false)
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+    private func createBase64AuthHeader() -> String {
         let basicToken = "\(Constants.clientID):\(Constants.clientSecret)"
-        guard let basicData = basicToken.data(using: .utf8) else {
-            completion(false)
-            return
-        }
-        let base64String = basicData.base64EncodedString()
-        request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
-        
-        let bodyParameters = [
-            "grant_type": "refresh_token",
-            "refresh_token": refreshToken
-        ]
-        request.httpBody = bodyParameters.map { "\($0.key)=\($0.value)" }
-            .joined(separator: "&")
-            .data(using: .utf8)
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        
-        let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
-            guard let data = data, error == nil else {
-                completion(false)
-                return
-            }
-            
-            do {
-                let result = try JSONDecoder().decode(AuthResponse.self, from: data)
-                self?.cacheToken(result: result)
-                completion(true)
-            } catch {
-                print("Error decoding refresh token response: \(error.localizedDescription)")
-                completion(false)
-            }
-        }
-        task.resume()
+        guard let basicData = basicToken.data(using: .utf8) else { return "" }
+        return basicData.base64EncodedString()
     }
+    
+    
     
     // MARK: - Cache Tokens
     private func cacheToken(result: AuthResponse) {
@@ -292,7 +255,7 @@ final class AuthManager {
             task.resume()
         }
     }
-
+    
     
     // MARK: - Create API Request
     public func createRequest(
@@ -300,7 +263,7 @@ final class AuthManager {
         type: HTTPMethod,
         completion: @escaping (URLRequest) -> Void
     ) {
-        AuthManager.shared.withvalidToken { token in
+        withValidToken { token in
             guard let apiURL = url else { return }
             
             var request = URLRequest(url: apiURL)
@@ -321,29 +284,58 @@ final class AuthManager {
             completion(.failure(ApiError.invalidURL))
             return
         }
-
+        
         createRequest(with: apiURL, type: type) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                // Handle network error
+                if let error = error {
+                    print("Network error: \(error.localizedDescription)")
+                    completion(.failure(error))
+                    return
+                }
+                
+                // Check the status code
+                if let httpResponse = response as? HTTPURLResponse {
+                    switch httpResponse.statusCode {
+                    case 200:
+                        break
+                    case 404:
+                        print("Error: Endpoint not found (404). Please check the URL.")
+                        completion(.failure(ApiError.failedToGetData))  // 404 specific handling
+                        return
+                    default:
+                        print("HTTP Status Code: \(httpResponse.statusCode)")
+                    }
+                }
+                
+                // Handle empty or invalid response
+                guard let data = data else {
+                    print("No data received from the server.")
                     completion(.failure(ApiError.failedToGetData))
                     return
                 }
                 
+                // Print raw response data for debugging
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Raw Response Data: \(jsonString)")
+                }
+                
+                // Attempt to decode the response
                 do {
-                    let result = try JSONDecoder().decode(T.self, from: data)
-                    print(result)
-                    completion(.success(result))
+                    let decoder = JSONDecoder()
+                    let decodedResponse = try decoder.decode(responseType, from: data)
+                    completion(.success(decodedResponse))
                 } catch {
-                    print("Decoding Error: \(error.localizedDescription)")
-                    print("Response Data: \(String(data: data, encoding: .utf8) ?? "No data")")
-                    completion(.failure(ApiError.decodingError(error.localizedDescription)))
+                    print("Decoding error: \(error)")
+                    completion(.failure(error))
                 }
             }
+            
             task.resume()
         }
     }
     
-
+    
     enum HTTPMethod : String {
         case GET
         case POST
@@ -359,6 +351,14 @@ struct AuthResponse: Codable {
     let refresh_token: String?
     let scope: String
     let token_type: String
+}
+
+enum AuthManagerError: Error {
+    case invalidURL
+    case decodingError(String)
+    case failedToGetData
+    case tokenRefreshFailed
+    case unknown(String)
 }
 
  

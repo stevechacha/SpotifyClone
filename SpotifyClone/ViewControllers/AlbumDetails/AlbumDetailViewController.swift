@@ -102,11 +102,11 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
             return
         }
         
-        AlbumApiCaller.shared.getAlbumTracks(albumID: albumID) { [weak self] result in
+        AlbumApiCaller.shared.getAllAlbumTracks(albumID: albumID) { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let tracksResponse):
-                    self?.tracks = tracksResponse.items
+                    self?.tracks = tracksResponse
                     self?.tableView.reloadData()
                 case .failure(let error):
                     print("Failed to fetch tracks: \(error)")

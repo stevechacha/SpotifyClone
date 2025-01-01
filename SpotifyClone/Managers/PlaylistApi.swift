@@ -92,27 +92,7 @@ final class PlaylistApiCaller {
             task.resume()
         }
     }
-    
-    // MARK: - Get Featured Playlists
-    public func getFeaturedPlaylists(completion: @escaping (Result<FeaturedPlayListResponse, Error>) -> Void) {
-        AuthManager.shared.createRequest(with: URL(string: "\(Constants.baseAPIURL)/browse/featured-playlists"), type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                do {
-                    let response = try JSONDecoder().decode(FeaturedPlayListResponse.self, from: data)
-                    print("result\(response)")
-                    completion(.success(response))
-                } catch {
-                    print("Error decoding FeaturedPlayListResponse: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
-    }
+
     
     
     // MARK: - Get Playlist by ID
@@ -191,18 +171,6 @@ final class PlaylistApiCaller {
                 combinedResponse["UserPlaylists"] = userPlaylists
             case .failure(let error):
                 print("Error fetching user's playlists: \(error)")
-            }
-            dispatchGroup.leave()
-        }
-        
-        // Fetch Featured Playlists
-        dispatchGroup.enter()
-        getFeaturedPlaylists { result in
-            switch result {
-            case .success(let featuredPlaylists):
-                combinedResponse["FeaturedPlaylists"] = featuredPlaylists
-            case .failure(let error):
-                print("Error fetching featured playlists: \(error)")
             }
             dispatchGroup.leave()
         }
