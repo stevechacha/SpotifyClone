@@ -46,7 +46,7 @@ class GenreGridViewController: UIViewController, UICollectionViewDelegate, UICol
     
     private func setupCollectionView() {
         let layout = UICollectionViewFlowLayout()
-        layout.itemSize = CGSize(width: (view.frame.size.width / 2) - 15, height: 150)
+        layout.itemSize = CGSize(width: (view.frame.size.width / 2) - 15, height: 90)
         layout.minimumInteritemSpacing = 10
         layout.minimumLineSpacing = 10
         

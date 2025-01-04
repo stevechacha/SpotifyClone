@@ -7,8 +7,6 @@
 
 import UIKit
 
-import UIKit
-
 class ArtistsByGenreViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     var genre: String = ""
     var artists: [TopItem] = []

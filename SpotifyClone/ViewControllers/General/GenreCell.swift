@@ -31,6 +31,8 @@ class GenreCell: UICollectionViewCell {
         super.init(frame: frame)
         contentView.addSubview(genreLabel)
         contentView.addSubview(artistCountLabel)
+        contentView.clipsToBounds = true
+
         
         genreLabel.translatesAutoresizingMaskIntoConstraints = false
         artistCountLabel.translatesAutoresizingMaskIntoConstraints = false
