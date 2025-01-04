@@ -55,7 +55,7 @@ class PlayerListViewController: UIViewController {
     }
     
     func fetchPlaylistTracks() {
-        PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlist.id) { [weak self] result in
+        PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlist.id ?? "No Id") { [weak self] result in
             switch result {
             case .success(let tracksResponse):
                 self?.tracks = tracksResponse.items
@@ -70,7 +70,7 @@ class PlayerListViewController: UIViewController {
     
     func getUserPlaylists(){
         var userID: String = ""
-        var playlistID: String = playlist.id
+        var playlistID: String = playlist.id ?? "NO Id"
 
         PlaylistApiCaller.shared.getCurrentUsersPlaylist { result in
             switch result {
@@ -98,7 +98,7 @@ class PlayerListViewController: UIViewController {
                     switch result {
                     case .success(let response):
                         if let firstPlaylist = response.items?.first {
-                            playlistID = firstPlaylist.id
+                            playlistID = firstPlaylist.id ?? "No Id"
                             print("Fetched Playlist ID: \(playlistID)")
                             
                             // Now you can pass these to fetchAllPlaylistDetails
@@ -156,7 +156,7 @@ class PlayerListViewController: UIViewController {
                     print("Playlist Name: \(playlist.name)")
                     
                     // Fetch tracks for each playlist
-                    PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlist.id) { tracksResult in
+                    PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlist.id ?? "No id") { tracksResult in
                         switch tracksResult {
                         case .success(let tracksResponse):
                             for trackItem in tracksResponse.items {

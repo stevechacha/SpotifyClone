@@ -12,6 +12,11 @@ struct SearchResponses: Codable {
     let shows: SearchItemsResponse<Show>?
     let episodes: SearchItemsResponse<Episode>?
     let chapters: SearchItemsResponse<Chapter>?
+    let tracks: SearchItemsResponse<Track>?
+    let artists: SearchItemsResponse<Artist>?
+    let albums: SearchItemsResponse<Album>?
+    let playlists: SearchItemsResponse<PlaylistItem>?
+    let audiobooks: SearchItemsResponse<Audiobook>?
 }
 
 // MARK: - SearchItemsResponse
@@ -20,14 +25,18 @@ struct SearchItemsResponse<T: Codable>: Codable {
 }
 
 
-struct SearchResponse: Codable {
-    let albums: AlbumsSearchResultsResponse
-    let shows: ShowSearchResults?
-    let episodes: EpisodeSearchResults?
-    let chapters: ChapterSearchResults?
-    let tracks: Tracks
-
+struct PaginatedResponse<T: Codable>: Codable {
+    let items: [T]
 }
+
+//struct SearchResponse: Codable {
+//    let albums: AlbumsSearchResultsResponse
+//    let shows: ShowSearchResults?
+//    let episodes: EpisodeSearchResults?
+//    let chapters: ChapterSearchResults?
+//    let tracks: Tracks
+//
+//}
 
 struct AlbumsSearchResultsResponse: Codable {
     let items: [Album]

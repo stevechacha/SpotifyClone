@@ -32,7 +32,7 @@ struct PlaylistView: View {
                                         .frame(width: 50, height: 50)
                                         .cornerRadius(8)
                                 }
-                                Text(playlist.name)
+                                Text(playlist.name ?? "NO Name")
                                     .font(.headline)
                                 Spacer()
                             }

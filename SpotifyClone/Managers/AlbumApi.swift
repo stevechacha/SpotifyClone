@@ -6,7 +6,6 @@
 //
 import Foundation
 
-
 final class AlbumApiCaller {
     static let shared = AlbumApiCaller()
     
@@ -27,7 +26,11 @@ final class AlbumApiCaller {
         decodingType: T.Type,
         completion: @escaping (Result<T, ApiError>) -> Void
     ) {
-        AuthManager.shared.createRequest(with: url, type: type) { request in
+        guard let apiURL = url else {
+            completion(.failure(ApiError.invalidURL))
+            return
+        }
+        AuthManager.shared.createRequest(with: apiURL, type: type) { request in
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 guard let data = data, error == nil else {
                     completion(.failure(.failedToGetData))
@@ -227,10 +230,10 @@ final class AlbumApiCaller {
             return
         }
 
-        createAndExecuteRequest(with: url, type: .GET, decodingType: SearchResponse.self) { result in
+        createAndExecuteRequest(with: url, type: .GET, decodingType: SearchResponses.self) { result in
             switch result {
             case .success(let response):
-                completion(.success(response.albums.items))
+                completion(.success(response.albums?.items ?? []))
             case .failure(let error):
                 completion(.failure(error))
             }
@@ -252,8 +255,4 @@ final class AlbumApiCaller {
     }
 }
 
-
-
-
-// MARK: - Error Types
 

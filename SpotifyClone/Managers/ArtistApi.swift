@@ -28,11 +28,15 @@ final class ArtistApiCaller {
     // MARK: - Helper Methods
 
     private func performRequest<T: Decodable>(
-        url: URL,
+        url: URL?,
         responseType: T.Type,
         completion: @escaping (Result<T, Error>) -> Void
     ) {
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+        guard let apiURL = url else {
+            completion(.failure(ApiError.invalidURL))
+            return
+        }
+        AuthManager.shared.createRequest(with: apiURL, type: .GET) { request in
             let task = URLSession.shared.dataTask(with: request) { data, _, error in
                 guard let data = data, error == nil else {
                     completion(.failure(error ?? ApiError.failedToGetData))
@@ -175,9 +179,6 @@ final class ArtistApiCaller {
 }
 
     
-
-
-
 
 enum ArtistApiError : LocalizedError {
     case invalidURL

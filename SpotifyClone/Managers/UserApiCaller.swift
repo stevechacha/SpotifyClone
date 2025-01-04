@@ -110,41 +110,6 @@ final class UserApiCaller {
 
         fetchNextPage()
     }
-
-    
-    func parseTopItemsResponse(data: Data) {
-        do {
-            let decoder = JSONDecoder()
-            let response = try decoder.decode(TopItemsResponse.self, from: data)
-            
-            // Access the top items
-            for item in response.items ?? [] {
-                print("Name: \(item.name)")
-                print("Genres: \(item.genres?.joined(separator: ", ") ?? "Uknown Genre")")
-                print("Popularity: \(item.popularity ?? 0)")
-                if let imageUrl = item.images?.first?.url {
-                    print("Image URL: \(imageUrl)")
-                }
-                print("Spotify URL: \(item.externalUrls?.spotify ?? "No Spotify Url")")
-                print("Followers: \(item.followers?.total ?? 0 )")
-                print("---------------------------")
-            }
-        } catch {
-            print(error)
-            print("Failed to parse top items: \(error.localizedDescription)")
-        }
-    }
-
-
-}
-
-struct SpotifyAPIErrorResponse: Decodable {
-    let error: SpotifyErrorDetails
-}
-
-struct SpotifyErrorDetails: Decodable {
-    let status: Int
-    let message: String
 }
 
 

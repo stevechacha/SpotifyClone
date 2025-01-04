@@ -168,8 +168,8 @@ final class TrackApiCaller {
                     return
                 }
                 do {
-                    let searchResponse = try JSONDecoder().decode(SearchResponse.self, from: data)
-                    let trackIDs = searchResponse.tracks.items?.map { $0.id }
+                    let searchResponse = try JSONDecoder().decode(SearchResponses.self, from: data)
+                    let trackIDs = searchResponse.tracks?.items.map { $0.id }
                     completion(.success(trackIDs!))
                 } catch {
                     completion(.failure(error))

@@ -116,11 +116,11 @@ class SpotifyHomeViewModel: ObservableObject {
     }
 }
 
-struct Playlist: Identifiable, Decodable {
-    let id: String
-    let name: String
-    let description: String?
-}
+//struct Playlist: Identifiable, Decodable {
+//    let id: String
+//    let name: String
+//    let description: String?
+//}
 
 struct SpotifyPlaylistsResponse: Decodable {
     let items: [PlaylistItem]

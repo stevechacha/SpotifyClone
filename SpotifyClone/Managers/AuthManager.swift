@@ -14,8 +14,8 @@ final class AuthManager {
     
     // MARK: - Constants
     struct Constants {
-        static let clientID = "76a675416313462c92babb568e064676"
-        static let clientSecret = "25cb1fc758d14074be471a1c3cb45349" // Replace with your client secret
+        static let clientID = "CLIENT ID" // Replace with your client ID
+        static let clientSecret = "CLIENT SECRET" // Replace with your client secret
         static let tokenAPIURL = "https://accounts.spotify.com/api/token"
         static let redirectURI = "http://localhost:3000/callback" // Replace with your registered redirect URI
         static let scopes = [

@@ -11,6 +11,7 @@ import Foundation
 struct UserProfile: Codable {
     let id: String
     let display_name: String
+    let followers: Followers?
     let email: String?
     let country: String?
     let product: String?// Free, Premium, etc.

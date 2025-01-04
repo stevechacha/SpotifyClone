@@ -255,7 +255,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
             let detailVC = PodcastDetailViewController(podcast: podcast)
             navigationController?.pushViewController(detailVC, animated: true)
         case .episode(let episode):
-            let episodeDetailVC = EpisodeDetailViewController(episode: episode) // Assuming you have an episode detail view controller
+            let episodeDetailVC = UserEpisodeDetailViewController(episode: episode) // Assuming you have an episode detail view controller
             navigationController?.pushViewController(episodeDetailVC, animated: true)
         }
     }

@@ -53,16 +53,16 @@ struct PlaylistItem: Codable , Identifiable {
     let description: String?
     let externalUrls: ExternalURLs?
     let followers: Followers?
-    let href: String
-    let id: String
+    let href: String?
+    let id: String?
     let images: [APIImage]?
-    let name: String
+    let name: String?
     let owner: Owner?
-    let publicAccess: Bool
-    let snapshotID: String
+    let publicAccess: Bool?
+    let snapshotID: String?
     let tracks: Tracks?
-    let type: String
-    let uri: String
+    let type: String?
+    let uri: String?
     
     enum CodingKeys: String, CodingKey {
         case collaborative, description

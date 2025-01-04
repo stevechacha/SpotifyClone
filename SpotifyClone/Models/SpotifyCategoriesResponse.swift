@@ -11,6 +11,8 @@
 //  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
 // @GET(browse/categories)
 
+import Foundation
+
 struct SpotifyCategoriesResponse: Codable {
     let categories: Categories
 }

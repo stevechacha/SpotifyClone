@@ -194,7 +194,7 @@ class ChaptersViewController: UIViewController {
         ChapterApiCaller.shared.search(query: "Science Podcast", type: "show") { result in
             switch result {
             case .success(let searchResponse):
-                if let firstShow = searchResponse.shows?.items?.first {
+                if let firstShow = searchResponse.shows?.items.first {
                     print("Found Show: \(firstShow.name ?? "Unknown First Show Name") (ID: \(firstShow.id ?? "NO ShowID"))")
                     
                     // Step 2: Get Episodes of the Show

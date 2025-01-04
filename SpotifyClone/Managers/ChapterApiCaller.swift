@@ -150,7 +150,7 @@ final class ChapterApiCaller {
     }
     
     
-    public func search(query: String, type: String, completion: @escaping (Result<SearchResponse, Error>) -> Void) {
+    public func search(query: String, type: String, completion: @escaping (Result<SearchResponses, Error>) -> Void) {
         guard let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             completion(.failure(ApiError.invalidURL))
             return
@@ -158,7 +158,7 @@ final class ChapterApiCaller {
         fetch(
             endpoint: "/search?q=\(encodedQuery)&type=\(type)",
             type: .GET,
-            responseType: SearchResponse.self,
+            responseType: SearchResponses.self,
             completion: completion
         )
     }

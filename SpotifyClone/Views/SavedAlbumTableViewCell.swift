@@ -71,7 +71,7 @@ class SavedAlbumTableViewCell: UITableViewCell {
     
     func configure(with album: Album) {
         titleLabel.text = album.name ?? "Unknown Album"
-        artistLabel.text = album.artists?.map { $0.name }.joined(separator: ", ") ?? "Unknown Artist"
+        artistLabel.text = album.artists?.map { $0.name ?? "default value" }.joined(separator: ", ") ?? "Unknown Artist"
         
         if let imageUrlString = album.images?.first?.url, let imageUrl = URL(string: imageUrlString) {
             loadImage(from: imageUrl)

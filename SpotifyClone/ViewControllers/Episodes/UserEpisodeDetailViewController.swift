@@ -8,7 +8,7 @@
 
 import UIKit
 
-class EpisodeDetailViewController: UIViewController {
+class UserEpisodeDetailViewController: UIViewController {
     private let episode: UserSavedEpisode
     private let chapterApiCaller = ChapterApiCaller.shared
 
