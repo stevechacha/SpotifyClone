@@ -79,12 +79,42 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         tableView.dataSource = self
         tableView.delegate = self
         
-        // Layout UI elements
-        albumImageView.frame = CGRect(x: (view.frame.width - 150) / 2, y: 100, width: 150, height: 150)
-        albumNameLabel.frame = CGRect(x: 20, y: albumImageView.frame.maxY + 10, width: view.frame.width - 40, height: 50)
-        artistLabel.frame = CGRect(x: 20, y: albumNameLabel.frame.maxY + 5, width: view.frame.width - 40, height: 20)
-        releaseDateLabel.frame = CGRect(x: 20, y: artistLabel.frame.maxY + 5, width: view.frame.width - 40, height: 20)
-        tableView.frame = CGRect(x: 0, y: releaseDateLabel.frame.maxY + 10, width: view.frame.width, height: view.frame.height - releaseDateLabel.frame.maxY - 10)
+        // Enable Auto Layout
+        albumImageView.translatesAutoresizingMaskIntoConstraints = false
+        albumNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        artistLabel.translatesAutoresizingMaskIntoConstraints = false
+        releaseDateLabel.translatesAutoresizingMaskIntoConstraints = false
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // Add Auto Layout constraints
+        NSLayoutConstraint.activate([
+            // Album Image View
+            albumImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            albumImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            albumImageView.widthAnchor.constraint(equalToConstant: 150),
+            albumImageView.heightAnchor.constraint(equalToConstant: 150),
+            
+            // Album Name Label
+            albumNameLabel.topAnchor.constraint(equalTo: albumImageView.bottomAnchor, constant: 8),
+            albumNameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            albumNameLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            // Artist Label
+            artistLabel.topAnchor.constraint(equalTo: albumNameLabel.bottomAnchor, constant: 4),
+            artistLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            artistLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            // Release Date Label
+            releaseDateLabel.topAnchor.constraint(equalTo: artistLabel.bottomAnchor, constant: 4),
+            releaseDateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            releaseDateLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            // TableView
+            tableView.topAnchor.constraint(equalTo: releaseDateLabel.bottomAnchor, constant: 16),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
         
         // Configure UI elements
         albumNameLabel.text = album.name ?? "Unknown Album"
@@ -142,3 +172,4 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         return cell
     }
 }
+

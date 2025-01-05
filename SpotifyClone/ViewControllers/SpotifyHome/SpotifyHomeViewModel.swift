@@ -9,119 +9,83 @@
 import SwiftUI
 import Combine
 
-// MARK: - ViewModel
-class SpotifyHomeViewModel: ObservableObject {
-    
-    @Published var playlists: [PlaylistItem] = []
-    @Published var podcasts: [UsersSavedShowsItems] = []
-    @Published var albums: [String] = []
-    @Published var pickedForYou: [PlaylistItem] = []
-    @Published var jumpBackIn: [Artist] = []
-    @Published var isLoading: Bool = false
 
-    private var cancellables = Set<AnyCancellable>()
-    private let apiManager = AuthManager.shared
-
-
-    init() {
-        fetchPodcasts()
-        fetchUserSavedAlbums()
-    }
-
-
-
-    private func fetchPodcasts() {
-        ChapterApiCaller.shared.getUserSavedPodCasts { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    self.podcasts = response.items ?? []
-                case .failure(let error):
-                    print("Failed to fetch podcasts: \(error)")
-                }
-            }
-        }
-    }
-
-    private func fetchUserSavedAlbums() {
-        AlbumApiCaller.shared.getSavedAlbums { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    self.albums = response.items.map { $0.album?.name ?? "" }
-                case .failure(let error):
-                    print("Failed to fetch user-saved albums: \(error)")
-                }
-            }
-        }
-    }
-    
-    func fetchPlaylistss() {
-        isLoading = true
-        apiManager.performRequest(
-            url: URL(string: "https://api.spotify.com/v1/me/playlists"),
-            type: .GET,
-            responseType: SpotifyPlaylistsResponse.self
-        ) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                switch result {
-                case .success(let response):
-                    self?.playlists = response.items
-                case .failure(let error):
-                    print("Error fetching playlists: \(error)")
-                }
-            }
-        }
-    }
-
-    func fetchPickedForYou() {
-        isLoading = true
-        // Replace with the actual endpoint or logic for fetching "Picked for You"
-        apiManager.performRequest(
-            url: URL(string: "https://api.spotify.com/v1/browse/featured-playlists"),
-            type: .GET,
-            responseType: SpotifyPlaylistsResponse.self
-        ) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                switch result {
-                case .success(let response):
-                    self?.pickedForYou = response.items
-                case .failure(let error):
-                    print("Error fetching picked for you: \(error)")
-                }
-            }
-        }
-    }
-
-    func fetchJumpBackIn() {
-        isLoading = true
-        // Replace with the actual endpoint or logic for fetching "Jump Back In"
-        apiManager.performRequest(
-            url: URL(string: "https://api.spotify.com/v1/me/top/artists"),
-            type: .GET,
-            responseType: SpotifyArtistsResponse.self
-        ) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                switch result {
-                case .success(let response):
-                    self?.jumpBackIn = response.artists
-                case .failure(let error):
-                    print("Error fetching jump back in: \(error)")
-                }
-            }
-        }
-    }
+// MARK: - Enum for Filter Types
+enum ContentType {
+    case all
+    case music
+    case podcasts
 }
 
-//struct Playlist: Identifiable, Decodable {
-//    let id: String
-//    let name: String
-//    let description: String?
-//}
+class SpotifyHomeViewModel: ObservableObject {
+    @Published var playlists: [PlaylistItem] = []
+    @Published var podcasts: [UsersSavedShowsItems] = []
+    @Published var jumpBackIn: [TopItem] = []
+    @Published var isLoading: Bool = false
+    @Published var errorMessage: String?
+    @Published var selectedFilter: ContentType = .all
 
-struct SpotifyPlaylistsResponse: Decodable {
-    let items: [PlaylistItem]
+    private var cancellables = Set<AnyCancellable>()
+
+    init() {
+        fetchHomeData()
+    }
+
+    func fetchHomeData() {
+        isLoading = true
+        errorMessage = nil
+
+        let dispatchGroup = DispatchGroup()
+        var errors: [String] = []
+
+        // Fetch playlists
+        dispatchGroup.enter()
+        PlaylistApiCaller.shared.getCurrentUsersPlaylist { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.playlists = response.items ?? []
+                case .failure(let error):
+                    errors.append("Playlists: \(error.localizedDescription)")
+                }
+                dispatchGroup.leave()
+            }
+        }
+
+        // Fetch podcasts
+        dispatchGroup.enter()
+        ChapterApiCaller.shared.getUserSavedPodCasts { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.podcasts = response.items ?? []
+                case .failure(let error):
+                    errors.append("Podcasts: \(error.localizedDescription)")
+                }
+                dispatchGroup.leave()
+            }
+        }
+
+        // Fetch "Jump Back In"
+        dispatchGroup.enter()
+        UserApiCaller.shared.getUserTopItems(type: "artists") { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.jumpBackIn = response
+                case .failure(let error):
+                    errors.append("Jump Back In: \(error.localizedDescription)")
+                }
+                dispatchGroup.leave()
+            }
+        }
+
+        // Completion
+        dispatchGroup.notify(queue: .main) {
+            self.isLoading = false
+            if !errors.isEmpty {
+                self.errorMessage = errors.joined(separator: "\n")
+            }
+        }
+    }
 }

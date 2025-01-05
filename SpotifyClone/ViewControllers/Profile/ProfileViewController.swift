@@ -91,7 +91,9 @@ class ProfileViewController: UIViewController {
             topItemsTableView.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 20),
             topItemsTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             topItemsTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            topItemsTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            topItemsTableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor) // Use safeAreaLayoutGuide
+//            topItemsTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+
         ])
         
         topItemsTableView.register(TopItemTableViewCell.self, forCellReuseIdentifier: TopItemTableViewCell.identifier)
@@ -115,19 +117,6 @@ class ProfileViewController: UIViewController {
     }
     
     private func fetchTopItems() {
-//        UserApiCaller.shared.getUserTopItems(type: "tracks") { [weak self] result in
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let items):
-//                    self?.topItems = items
-//                    self?.topItemsTableView.reloadData()
-//                    self?.topItemsTableView.isHidden = false
-//                case .failure(let error):
-//                    print("Failed to fetch top items: \(error)")
-//                }
-//            }
-//        }
-        
         UserApiCaller.shared.getUserTopItems(type: "artists") { [weak self] result in
             DispatchQueue.main.async {
                 switch result {

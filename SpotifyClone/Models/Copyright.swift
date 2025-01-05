@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Copyright: Codable {
+struct Copyright: Codable  {
     let text: String
     let type: String
 }

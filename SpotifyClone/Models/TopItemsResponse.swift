@@ -17,7 +17,7 @@ struct TopItemsResponse: Codable {
     let items: [TopItem]?
 }
 
-struct TopItem: Codable {
+struct TopItem: Codable , Identifiable {
     let externalUrls: ExternalURLs?
     let followers: Followers?
     let genres: [String]?

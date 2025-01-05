@@ -10,12 +10,12 @@ import Foundation
 
 // MARK: - CurrentUsersPlaylistsResponse
 struct CurrentUsersPlaylistsResponse: Codable {
-    let href: String
-    let limit: Int
+    let href: String?
+    let limit: Int?
     let next: String?
-    let offset: Int
+    let offset: Int?
     let previous: String?
-    let total: Int
+    let total: Int?
     let items: [PlaylistItem]?
 }
 

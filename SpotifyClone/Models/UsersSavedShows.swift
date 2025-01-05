@@ -9,7 +9,7 @@ import Foundation
 
 
 // MARK: - UsersSavedShows
-struct UsersSavedShows: Codable {
+struct UsersSavedShows: Codable{
     let href: String
     let limit: Int
     let next: String?

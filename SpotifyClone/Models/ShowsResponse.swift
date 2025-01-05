@@ -17,7 +17,7 @@ struct ShowsResponse: Codable {
 
 
 // MARK: - Show
-struct Show: Codable {
+struct Show: Codable , Identifiable {
     let availableMarkets: [String]?
     let copyrights: [Copyright]?
     let description: String?

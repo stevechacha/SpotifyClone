@@ -7,114 +7,29 @@
 
 import SwiftUI
 
-
 struct SpotifyHomeView: View {
-    let playlists = [
-        "Daily Mix 2", "First Of All", "Nandy Radio",
-        "Notos", "Alusa Why Are You Topless?",
-        "Maisha Ya Stunna", "Albu", "Afro Station"
-    ]
-    
+    @StateObject private var viewModel = SpotifyHomeViewModel()
+
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // Header Section
-                    HStack {
-                        Image(systemName: "person.crop.circle")
-                            .resizable()
-                            .frame(width: 40, height: 40)
-                        Spacer()
-                        HStack(spacing: 15) {
-                            Image(systemName: "bell")
-                            Image(systemName: "clock")
-                            Image(systemName: "gear")
-                        }
-                        .foregroundColor(.gray)
-                    }
-                    .padding()
+                    headerSection
                     
                     // Filter Section
-                    HStack {
-                        Text("All")
-                            .bold()
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.green)
-                            .cornerRadius(15)
-                            .foregroundColor(.white)
-                        Text("Music")
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(15)
-                        Text("Podcasts")
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(15)
-                    }
-                    .padding(.horizontal)
+                    filterSection
                     
-                    // Playlist Grid
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
-                        ForEach(playlists, id: \.self) { playlist in
-                            VStack {
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.4))
-                                    .frame(height: 80)
-                                    .cornerRadius(10)
-                                Text(playlist)
-                                    .font(.caption)
-                                    .lineLimit(1)
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // Picked for You Section
-                    VStack(alignment: .leading) {
-                        Text("Picked for you")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        HStack {
-                            Rectangle()
-                                .fill(Color.pink)
-                                .frame(width: 150, height: 150)
-                                .cornerRadius(10)
-                            VStack(alignment: .leading) {
-                                Text("Viral Hits Africa")
-                                    .font(.title3)
-                                    .bold()
-                                Text("All the vibes, enjoyment, and future hits right here")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                        }
-                        .padding()
-                    }
-                    
-                    // Jump Back In Section
-                    VStack(alignment: .leading) {
-                        Text("Jump back in")
-                            .font(.headline)
-                            .padding(.horizontal)
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack {
-                                ForEach(0..<5) { _ in
-                                    VStack {
-                                        Rectangle()
-                                            .fill(Color.gray.opacity(0.4))
-                                            .frame(width: 100, height: 100)
-                                            .cornerRadius(10)
-                                        Text("Artist Name")
-                                            .font(.caption)
-                                            .lineLimit(1)
-                                    }
-                                }
-                            }
-                            .padding(.horizontal)
-                        }
+                    // Content
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .padding()
+                    } else if let errorMessage = viewModel.errorMessage {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .padding()
+                    } else {
+                        contentSection
                     }
                 }
                 .padding(.bottom, 20)
@@ -122,6 +37,115 @@ struct SpotifyHomeView: View {
             .navigationBarHidden(true)
         }
     }
+
+    private var headerSection: some View {
+        HStack {
+            Image(systemName: "person.crop.circle")
+                .resizable()
+                .frame(width: 40, height: 40)
+            Spacer()
+            HStack(spacing: 15) {
+                Image(systemName: "bell")
+                Image(systemName: "clock")
+                Image(systemName: "gear")
+            }
+            .foregroundColor(.gray)
+        }
+        .padding()
+    }
+
+    private var filterSection: some View {
+        HStack {
+            ForEach([ContentType.all, .music, .podcasts], id: \.self) { type in
+                Text(type == .all ? "All" : type == .music ? "Music" : "Podcasts")
+                    .bold(type == viewModel.selectedFilter)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(type == viewModel.selectedFilter ? Color.green : Color.gray.opacity(0.2))
+                    .cornerRadius(15)
+                    .foregroundColor(type == viewModel.selectedFilter ? .white : .primary)
+                    .onTapGesture {
+                        withAnimation {
+                            viewModel.selectedFilter = type
+                        }
+                    }
+            }
+        }
+        .padding(.horizontal)
+    }
+
+    private var contentSection: some View {
+        Group {
+            if viewModel.selectedFilter == .all || viewModel.selectedFilter == .music {
+                playlistGrid
+            }
+//            if viewModel.selectedFilter == .all || viewModel.selectedFilter == .podcasts {
+//                podcastSection
+//            }
+            jumpBackInSection
+        }
+        .padding(.horizontal)
+    }
+
+    private var playlistGrid: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
+            ForEach(viewModel.playlists) { playlist in
+                VStack {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.4))
+                        .frame(height: 80)
+                        .cornerRadius(10)
+                    Text(playlist.name ?? "Unknown Playlist")
+                        .font(.caption)
+                        .lineLimit(1)
+                }
+            }
+        }
+    }
+
+    private var jumpBackInSection: some View {
+        VStack(alignment: .leading) {
+            Text("Jump back in")
+                .font(.headline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack {
+                    ForEach(viewModel.jumpBackIn) { item in
+                        VStack {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.4))
+                                .frame(width: 100, height: 100)
+                                .cornerRadius(10)
+                            Text(item.name ?? "Unknown Artist")
+                                .font(.caption)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+//    private var podcastSection: some View {
+//        VStack(alignment: .leading) {
+//            Text("Your Podcasts")
+//                .font(.headline)
+//            ScrollView(.horizontal, showsIndicators: false) {
+//                HStack {
+//                    ForEach(viewModel.podcasts) { podcast in
+//                        VStack {
+//                            Rectangle()
+//                                .fill(Color.blue.opacity(0.4))
+//                                .frame(width: 100, height: 100)
+//                                .cornerRadius(10)
+//                            Text(podcast.show.name ?? "Unknown Podcast")
+//                                .font(.caption)
+//                                .lineLimit(1)
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//    }
 }
 
 struct SpotifyHomeView_Previews: PreviewProvider {
@@ -129,4 +153,3 @@ struct SpotifyHomeView_Previews: PreviewProvider {
         SpotifyHomeView()
     }
 }
-

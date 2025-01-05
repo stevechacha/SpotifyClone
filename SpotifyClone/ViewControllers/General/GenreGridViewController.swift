@@ -49,24 +49,24 @@ class GenreGridViewController: UIViewController, UICollectionViewDelegate, UICol
         layout.itemSize = CGSize(width: (view.frame.size.width / 2) - 15, height: 90)
         layout.minimumInteritemSpacing = 10
         layout.minimumLineSpacing = 10
-        
+
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .systemBackground
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.register(GenreCell.self, forCellWithReuseIdentifier: "GenreCell")
-        
+
         view.addSubview(collectionView)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
-        
+
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 10), // Start below the search bar
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
-            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor) // Use safeAreaLayoutGuide
         ])
     }
-    
+
     
     // MARK: - Fetch Genres
     private func fetchGenres() {

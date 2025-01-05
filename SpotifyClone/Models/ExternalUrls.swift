@@ -9,6 +9,10 @@ import Foundation
 
 struct ExternalUrls: Codable {
     let spotify: String?
+    
+    enum CodingKeys: CodingKey {
+        case spotify
+    }
 }
 
 

@@ -6,9 +6,8 @@
 //
 
 import UIKit
-
 class NewReleaseCollectionViewCell: UICollectionViewCell {
-    static let identifier = "NewReleaseCollectionViewCell"
+    static let identifier = "NewReleaseCollectionViewCells"
     
     private let albumImageView: UIImageView = {
         let imageView = UIImageView()
@@ -40,6 +39,13 @@ class NewReleaseCollectionViewCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.setupViews()
+        }
+    }
+
+    private func setupViews() {
         contentView.addSubview(albumImageView)
         contentView.addSubview(titleLabel)
         contentView.addSubview(artistLabel)
@@ -48,28 +54,32 @@ class NewReleaseCollectionViewCell: UICollectionViewCell {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         artistLabel.translatesAutoresizingMaskIntoConstraints = false
         tracksLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+
         NSLayoutConstraint.activate([
-            albumImageView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            albumImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            albumImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            albumImageView.heightAnchor.constraint(equalTo: contentView.widthAnchor),
+            // Set albumImageView size to 100x60
+            albumImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            albumImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            albumImageView.widthAnchor.constraint(equalToConstant: 100),
+            albumImageView.heightAnchor.constraint(equalToConstant: 60),
             
+            // Title label below the album image
             titleLabel.topAnchor.constraint(equalTo: albumImageView.bottomAnchor, constant: 8),
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
             
+            // Artist label below the title
             artistLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
             artistLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             artistLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
             
+            // Tracks label below the artist
             tracksLabel.topAnchor.constraint(equalTo: artistLabel.bottomAnchor, constant: 4),
             tracksLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             tracksLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
             tracksLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -8)
         ])
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -96,5 +106,3 @@ class NewReleaseCollectionViewCell: UICollectionViewCell {
         }
     }
 }
-
-
