@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 class PlaylistCollectionViewCell: UICollectionViewCell {
     static let identifier = "PlaylistCollectionViewCell"
@@ -78,21 +79,18 @@ class PlaylistCollectionViewCell: UICollectionViewCell {
     public func configure(with viewModel: PlaylistCellViewModel) {
         titleLabel.text = viewModel.name
         // Handle image loading with placeholder
+        // Use SDWebImage to load the image with caching and a placeholder
         if let url = viewModel.artUrl {
-            loadImage(from: url)
-        } else {
-            albumImageView.image = UIImage(named: "placeholder") // Replace with the name of your placeholder image
-        }
-    }
-    
-    private func loadImage(from url: URL) {
-        DispatchQueue.global().async {
-            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    self.albumImageView.image = image
+            albumImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image for \(self?.titleLabel.text ?? "unknown"): \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.titleLabel.text ?? "unknown")")
                 }
             }
+        } else {
+            albumImageView.image = UIImage(named: "placeholder") // Replace with your placeholder image name
         }
     }
-    
+        
 }

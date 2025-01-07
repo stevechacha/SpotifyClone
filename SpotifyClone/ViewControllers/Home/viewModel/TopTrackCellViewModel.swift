@@ -8,12 +8,13 @@
 import Foundation
 
 struct TopTrackCellViewModel {
+    let id: String // Track ID
     let name: String
-    let artUrl: URL?
-    
+    var artUrl: URL? // Mutable to allow updates
 
     // Initializer
-    init(name: String, artUrl: URL?) {
+    init(id: String, name: String, artUrl: URL?) {
+        self.id = id
         self.name = name
         self.artUrl = artUrl
     }

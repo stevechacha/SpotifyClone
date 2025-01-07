@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 class AlbumViewController : UIViewController {
 //    private let album: Album
@@ -69,7 +70,7 @@ class AlbumViewController : UIViewController {
                         case .success(let tracks):
                             print("Tracks for album \(album.name ?? "No Album Name"):")
                             for track in tracks {
-                                print("- \(track.name) (Duration: \(track.durationMs! / 1000) seconds)")
+                                print("- \(track.name ?? "Unknown Track Name") (Duration: \(track.durationMs! / 1000) seconds)")
                             }
                         case .failure(let error):
                             print("Failed to fetch tracks for album \(album.name ?? "Unkown Album"): \(error)")
@@ -111,11 +112,11 @@ class AlbumViewController : UIViewController {
                         case .success(let tracks):
                             print("Tracks for album \(album.name ?? "Unknow Album"):")
                             for track in tracks {
-                                print("- \(track.name) (Duration: \(track.durationMs! / 1000) seconds)")
-                                TrackApiCaller.shared.getTrack(trackID: track.id){ results in
+                                print("- \(track.name ?? "Unknown Track") (Duration: \(track.durationMs! / 1000) seconds)")
+                                TrackApiCaller.shared.getTrack(trackID: track.id ?? ""){ results in
                                     switch results {
                                     case .success(let track):
-                                        print("TrackApiCaller - \(track.name) (Duration: \(track.durationMs! / 1000) seconds)")
+                                        print("TrackApiCaller - \(track.name ?? "Unknown Track") (Duration: \(track.durationMs! / 1000) seconds)")
                                     case .failure(let error):
                                         print(error)
                                     }
@@ -140,7 +141,7 @@ class AlbumViewController : UIViewController {
     
     func fetchAlbumsAndTracks() {
         // Fetch albums saved by the user
-        AlbumApiCaller.shared.getSavedAlbums { result in
+        AlbumApiCaller.shared.getUserSavedAlbums { result in
             switch result {
             case .success(let savedAlbumsResponse):
                 guard !savedAlbumsResponse.items.isEmpty else {
@@ -175,8 +176,8 @@ class AlbumViewController : UIViewController {
                             } else {
                                 for trackItem in tracksResponse {
                                     let trackName = trackItem.name
-                                    let artists = trackItem.artists?.map { $0.name }.joined(separator: ", ") ?? "Unknown Artist"
-                                    print("Track: \(trackName) by \(artists)")
+                                    let artists = trackItem.artists?.map { $0.name ?? "" }.joined(separator: ", ") ?? "Unknown Artist"
+                                    print("Track: \(trackName ?? "Unknown Track Name") by \(artists)")
                                 }
                             }
                         case .failure(let error):
@@ -198,7 +199,7 @@ class AlbumViewController : UIViewController {
         AlbumApiCaller.shared.getAlbumDetails(albumID: albumID) { albumResult in
             switch albumResult {
             case .success(let album):
-                print("Album Name: \(album.name)")
+                print("Album Name: \(album.name ?? "")")
                 print("Genres: \(album.genres?.joined(separator: ", ") ?? "Unknown")")
 
                 // Convert genres array to Set<String>
@@ -238,7 +239,7 @@ class AlbumViewController : UIViewController {
                 for album in newReleases.albums.items {
                     
                     print("Album Name: \(album.name ?? "Unknow Album")")
-                    print("Artist(s): \(album.artists?.map { $0.name }.joined(separator: ", ") ?? "Unkown Artist")")
+                    print("Artist(s): \(album.artists?.map { $0.name ?? "" }.joined(separator: ", ") ?? "Unkown Artist")")
                     print("Release Date: \(album.releaseDate ?? "Unkown Released Date")")
                     if let imageUrl = album.images?.first?.url {
                         print("Album Cover URL: \(imageUrl)")
@@ -268,7 +269,7 @@ class AlbumViewController : UIViewController {
         ArtistApiCaller.shared.searchArtists(query: "Taylor Swift") { result in
             switch result {
             case .success(let artists):
-                let artistIDs = artists.map { $0.id }
+                let artistIDs = artists.map { $0.id } 
                 print("Artist IDs: \(artistIDs)")
                 AlbumApiCaller.shared.getSeveralAlbums(albumIDs: artistIDs) { result in
                     switch result {
@@ -276,7 +277,7 @@ class AlbumViewController : UIViewController {
                         print("Fetched Albums:")
                         for album in albumsResponse.albums ?? [] {
                             print("Album Name: \(album.name ?? "Unknown Album")")
-                            print("Artists: \(album.artists?.map { $0.name }.joined(separator: ", ") ?? "Unknow Artist")")
+                            print("Artists: \(album.artists?.map { $0.name ?? "" }.joined(separator: ", ") ?? "Unknow Artist")")
                             print("Release Date: \(album.releaseDate ?? "Unknown Release Date")")
                             if let imageUrl = album.images?.first?.url {
                                 print("Album Cover URL: \(imageUrl)")

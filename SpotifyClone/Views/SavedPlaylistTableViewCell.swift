@@ -72,18 +72,18 @@ class SavedPlaylistTableViewCell: UITableViewCell {
     func configure(with playlist: PlaylistItem) {
         titleLabel.text = playlist.name
         titleID.text = playlist.id
-        if let imageUrlString = playlist.images?.first?.url, let imageUrl = URL(string: imageUrlString) {
-            loadImage(from: imageUrl)
-        }
-    }
-    
-    private func loadImage(from url: URL) {
-        DispatchQueue.global().async {
-            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    self.playlistImageView.image = image
+        
+        if let imageUrl = playlist.images?.first?.url {
+            playlistImageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image: \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.titleLabel.text ?? "")")
                 }
             }
         }
+        
     }
+    
+   
 }

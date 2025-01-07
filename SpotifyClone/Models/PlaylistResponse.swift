@@ -20,13 +20,13 @@ struct Playlists: Codable {
 }
 
 struct PlaylistTracksResponse: Codable {
-    let href: String
-    let limit: Int
+    let href: String?
+    let limit: Int?
     let next: String?
-    let offset: Int
+    let offset: Int?
     let previous: String?
     let total: Int?
-    let items: [PlaylistItemsResponse]
+    let items: [PlaylistItemsResponse]?
 }
 
 
@@ -35,7 +35,7 @@ struct PlaylistItemsResponse: Codable {
     let addedAt: String
     let addedBy: AddedBy?
     let isLocal: Bool?
-    let track: Track
+    let track: Track?
     
     enum CodingKeys: String, CodingKey {
         case addedAt = "added_at"
@@ -73,33 +73,6 @@ struct PlaylistItem: Codable , Identifiable {
         case tracks, type, uri
     }
 }
-
-//// MARK: - Playlist
-//struct PlaylistItems: Codable {
-//    let collaborative: Bool
-//    let description: String
-//    let externalURLs: ExternalURLs
-//    let href: String
-//    let id: String
-//    let images: [APIImage]
-//    let name: String
-//    let owner: PlaylistOwner
-//    let publicAccess: Bool?
-//    let snapshotID: String
-//    let tracks: Tracks
-//    let type: String
-//    let uri: String
-//
-//    enum CodingKeys: String, CodingKey {
-//        case collaborative, description
-//        case externalURLs = "external_urls"
-//        case href, id, images, name, owner
-//        case publicAccess = "public"
-//        case snapshotID = "snapshot_id"
-//        case tracks, type, uri
-//    }
-//}
-
 
 
 // MARK: - Owner

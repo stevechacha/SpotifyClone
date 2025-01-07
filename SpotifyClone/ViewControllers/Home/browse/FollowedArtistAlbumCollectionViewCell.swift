@@ -1,16 +1,16 @@
 //
-//  AlbumCollectionViewCell.swift
+//  FollowedArtistAlbumCollectionViewCell.swift
 //  SpotifyClone
 //
-//  Created by stephen chacha on 05/01/2025.
+//  Created by stephen chacha on 06/01/2025.
 //
 
-import Foundation
-import UIKit
 
-class AlbumCollectionViewCell: UICollectionViewCell {
-    
-    static let identifier = "AlbumCollectionViewCell"
+import UIKit
+import SDWebImage
+
+class FollowedArtistAlbumCollectionViewCell: UICollectionViewCell {
+    static let identifier = "FollowedArtistAlbumCollectionViewCell"
     
     private let albumImageView: UIImageView = {
         let imageView = UIImageView()
@@ -42,7 +42,6 @@ class AlbumCollectionViewCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
         DispatchQueue.main.async { [weak self] in
             self?.setupViews()
         }
@@ -87,28 +86,23 @@ class AlbumCollectionViewCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public func configure(with viewModel: AlbumCellViewModel) {
+    public func configure(with viewModel: FollowedArtistAlbumCellViewModel) {
         titleLabel.text = viewModel.name
         artistLabel.text = viewModel.artistName
         tracksLabel.text = viewModel.tracksText
-        // Handle image loading with placeholder
+        
+        // Use SDWebImage to load the image with caching and a placeholder
         if let url = viewModel.artUrl {
-            loadImage(from: url)
-        } else {
-            albumImageView.image = UIImage(named: "placeholder") // Replace with the name of your placeholder image
-        }
-    }
-    
-    private func loadImage(from url: URL) {
-        DispatchQueue.global().async {
-            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    self.albumImageView.image = image
+            albumImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image for \(self?.titleLabel.text ?? "unknown"): \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.titleLabel.text ?? "unknown")")
                 }
             }
+        } else {
+            albumImageView.image = UIImage(named: "placeholder") // Replace with your placeholder image name
         }
     }
 }
-
-
 

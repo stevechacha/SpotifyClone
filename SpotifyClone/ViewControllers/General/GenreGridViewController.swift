@@ -15,17 +15,16 @@ class GenreGridViewController: UIViewController, UICollectionViewDelegate, UICol
     private var genres: [String] = [] // Array to store unique genres
     private var artistsByGenre: [String: [TopItem]] = [:] // Dictionary to map genres to artists
     private var searchBar: UISearchBar!
-    
+    private var spinner: UIActivityIndicatorView! // Spinner for loading
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         setupSearchBar()
         setupCollectionView()
-        fetchData()
-        fetchGenres()
+        setupSpinner() // Set up spinner
+        fetchGenres() // Fetch genres and show spinner
     }
-    
     
     private func setupSearchBar() {
         searchBar = UISearchBar()
@@ -56,6 +55,9 @@ class GenreGridViewController: UIViewController, UICollectionViewDelegate, UICol
         collectionView.dataSource = self
         collectionView.register(GenreCell.self, forCellWithReuseIdentifier: "GenreCell")
 
+        // Disable automatic content inset adjustment
+        collectionView.contentInsetAdjustmentBehavior = .never
+
         view.addSubview(collectionView)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -66,15 +68,29 @@ class GenreGridViewController: UIViewController, UICollectionViewDelegate, UICol
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor) // Use safeAreaLayoutGuide
         ])
     }
-
+    
+    private func setupSpinner() {
+        spinner = UIActivityIndicatorView(style: .large)
+        spinner.color = .gray
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(spinner)
+        
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
     
     // MARK: - Fetch Genres
     private func fetchGenres() {
         print("Fetching user top items...")
-        
+        spinner.startAnimating() // Start spinner while loading data
+
         // Fetch top artists and categorize them by genre
         UserApiCaller.shared.getUserTopItems(type: "artists") { [weak self] result in
             DispatchQueue.main.async {
+                self?.spinner.stopAnimating() // Stop spinner when done
+                
                 switch result {
                 case .success(let items):
                     print("Fetched items count: \(items.count)") // Log number of artists
@@ -118,7 +134,6 @@ class GenreGridViewController: UIViewController, UICollectionViewDelegate, UICol
         .systemIndigo, .systemBrown, .cyan, .magenta
     ]
     
-    
     // MARK: - Collection View Data Source
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         print("Number of genres: \(genres.count)") // Log the number of genres
@@ -146,7 +161,6 @@ class GenreGridViewController: UIViewController, UICollectionViewDelegate, UICol
         )
     }
     
-    
     // MARK: - Handle Genre Selection
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedGenre = genres[indexPath.item]
@@ -158,16 +172,16 @@ class GenreGridViewController: UIViewController, UICollectionViewDelegate, UICol
         artistListVC.artists = artists
         navigationController?.pushViewController(artistListVC, animated: true)
     }
-    
 }
 
 extension GenreGridViewController: UISearchBarDelegate {
     func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
         // Navigate to HomeSearchViewController
-        let homeSearchVC = HomeSearchViewController()
+        let homeSearchVC = SearchViewController()
         navigationController?.pushViewController(homeSearchVC, animated: true)
         return false // Prevents the keyboard from appearing
     }
 }
+
 
 

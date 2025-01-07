@@ -64,22 +64,20 @@ class ArtistCell: UICollectionViewCell {
         infoLabel.text = "\(artist.popularity ?? 0)% Popularity"
         
         // Load the artist image
-        if let imageUrl = artist.images?.first?.url, let url = URL(string: imageUrl) {
-            loadImage(from: url)
+        if let imageUrl = artist.images?.first?.url {
+            artistImageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image: \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.artistNameLabel.text ?? "")")
+                }
+            }
         }
     }
     
-    private func loadImage(from url: URL) {
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            guard let data = data, let image = UIImage(data: data) else { return }
-            DispatchQueue.main.async {
-                self?.artistImageView.image = image
-            }
-        }.resume()
-    }
+
     
     // MARK: - Layout
-    
     private func setupConstraints() {
         artistImageView.translatesAutoresizingMaskIntoConstraints = false
         artistNameLabel.translatesAutoresizingMaskIntoConstraints = false

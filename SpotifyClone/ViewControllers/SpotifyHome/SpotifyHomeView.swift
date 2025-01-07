@@ -115,7 +115,7 @@ struct SpotifyHomeView: View {
                                 .fill(Color.gray.opacity(0.4))
                                 .frame(width: 100, height: 100)
                                 .cornerRadius(10)
-                            Text(item.name ?? "Unknown Artist")
+                            Text(item.name)
                                 .font(.caption)
                                 .lineLimit(1)
                         }

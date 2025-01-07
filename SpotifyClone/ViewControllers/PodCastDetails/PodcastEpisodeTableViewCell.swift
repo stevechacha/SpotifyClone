@@ -42,6 +42,16 @@ class PodcastEpisodeTableViewCell: UITableViewCell {
 
     func configure(with episode: Episode) {
         titleLabel.text = episode.name
-        durationLabel.text = "Duration: \(episode.durationMs) mins" // Assuming `durationInMinutes` is available
+        durationLabel.text = "Duration: \(episode.durationMs ?? 0) mins"// Assuming `durationInMinutes` is available
+        
+//        if let imageUrl = episode.show?.images?.first?.url {
+//            imageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+//                if let error = error {
+//                    print("Failed to load image: \(error.localizedDescription)")
+//                } else {
+//                    print("Image loaded successfully for: \(self?.nameLabel.text ?? "")")
+//                }
+//            }
+//        }
     }
 }

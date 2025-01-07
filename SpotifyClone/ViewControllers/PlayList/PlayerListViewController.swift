@@ -17,6 +17,13 @@ class PlayerListViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
+    
+    private let loadingIndicator: UIActivityIndicatorView = {
+            let indicator = UIActivityIndicatorView(style: .large)
+            indicator.translatesAutoresizingMaskIntoConstraints = false
+            indicator.color = .gray
+            return indicator
+        }()
 
     // Initialize with a playlist
     init(playlist: PlaylistItem) {
@@ -35,10 +42,43 @@ class PlayerListViewController: UIViewController {
         
         // Setup table view
         setupTableView()
-
+        
         // Fetch tracks for this playlist
         fetchPlaylistTracks()
-        getUserPlaylists()
+        getPlaybackState()
+        
+        // Setup loading indicator
+        setupLoadingIndicator()
+    }
+    
+    func setupLoadingIndicator() {
+           view.addSubview(loadingIndicator)
+           NSLayoutConstraint.activate([
+               loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+               loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+           ])
+       }
+    
+    func getPlaybackState(){
+        SpotifyPlayer.shared.getPlaybackState { result in
+            switch result {
+            case .success(let playbackState):
+                if let device = playbackState.device, device.isActive ?? false {
+                    print("Active device: \(device.name ?? "Unknow Device Name") at volume \(device.volumePercent ?? 0 )%")
+                } else {
+                    print("No active device found.")
+                }
+                
+                if let track = playbackState.item {
+                    print("Now Playing: \(track.name ?? "Unknown Tracks") by \(track.artists?.first?.name ?? "Unknown Artist")")
+                } else {
+                    print("No track is currently playing.")
+                }
+                
+            case .failure(let error):
+                print("Failed to get playback state: \(error)")
+            }
+        }
     }
 
     // Setup TableView for displaying tracks
@@ -46,6 +86,7 @@ class PlayerListViewController: UIViewController {
         view.addSubview(tableView)
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.register(PlayListTrackTableViewCell.self, forCellReuseIdentifier: PlayListTrackTableViewCell.identifier)
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: view.topAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -55,120 +96,19 @@ class PlayerListViewController: UIViewController {
     }
     
     func fetchPlaylistTracks() {
+        loadingIndicator.startAnimating()
         PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlist.id ?? "No Id") { [weak self] result in
+            DispatchQueue.main.async {
+                self?.loadingIndicator.stopAnimating()
+            }
             switch result {
             case .success(let tracksResponse):
-                self?.tracks = tracksResponse.items
+                self?.tracks = tracksResponse.items ?? []
                 DispatchQueue.main.async {
                     self?.tableView.reloadData()
                 }
             case .failure(let error):
                 print("Failed to fetch tracks: \(error)")
-            }
-        }
-    }
-    
-    func getUserPlaylists(){
-        var userID: String = ""
-        var playlistID: String = playlist.id ?? "NO Id"
-
-        PlaylistApiCaller.shared.getCurrentUsersPlaylist { result in
-            switch result {
-            case .success(let playlistsResponse):
-                guard let playlists = playlistsResponse.items else {
-                    print("No playlists found!")
-                    return
-                }
-                
-                for playlist in playlists {
-                    print("Playlist ID: \(playlist.id), Playlist Name: \(playlist.name)")
-                }
-            case .failure(let error):
-                print("Error fetching playlists: \(error)")
-            }
-        }
-        
-        UserApiCaller.shared.getCurrentUserProfile { result in
-            switch result {
-            case .success(let profile):
-                userID = profile.id
-                print("Fetched User ID: \(userID)")
-                
-                PlaylistApiCaller.shared.getCurrentUsersPlaylist { result in
-                    switch result {
-                    case .success(let response):
-                        if let firstPlaylist = response.items?.first {
-                            playlistID = firstPlaylist.id ?? "No Id"
-                            print("Fetched Playlist ID: \(playlistID)")
-                            
-                            // Now you can pass these to fetchAllPlaylistDetails
-                            PlaylistApiCaller.shared.fetchAllPlaylistDetails(playlistID: playlistID, userID: userID) { result in
-                                switch result {
-                                case .success(let details):
-                                    print("All playlist details: \(details)")
-                                case .failure(let error):
-                                    print("Error: \(error)")
-                                }
-                            }
-                        }
-                    case .failure(let error):
-                        print("Error fetching playlists: \(error)")
-                    }
-                }
-            case .failure(let error):
-                print("Error fetching user profile: \(error)")
-            }
-        }
-
-
-    }
-    
-    
-    func getPlaylists(){
-        PlaylistApiCaller.shared.getCurrentUsersPlaylist { result in
-            switch result {
-            case .success(let playlistsResponse):
-                // Access the playlists array
-                let playlists = playlistsResponse.items
-
-                // Example: Print all playlist IDs
-                for playlist in playlists! {
-                    print("Playlist Name: \(playlist.name), Playlist ID: \(playlist.id)")
-                }
-
-                // Example: Access the first playlist ID
-                if let firstPlaylistID = playlists?.first?.id {
-                    print("First Playlist ID: \(firstPlaylistID)")
-                }
-            case .failure(let error):
-                print("Failed to fetch playlists: \(error)")
-            }
-        }
-        
-    }
-    
-    func fetchPlaylistsAndTracks() {
-
-        PlaylistApiCaller.shared.getCurrentUsersPlaylist { result in
-            switch result {
-            case .success(let playlistsResponse):
-                for playlist in playlistsResponse.items ?? [] {
-                    print("Playlist Name: \(playlist.name)")
-                    
-                    // Fetch tracks for each playlist
-                    PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlist.id ?? "No id") { tracksResult in
-                        switch tracksResult {
-                        case .success(let tracksResponse):
-                            for trackItem in tracksResponse.items {
-                                print("Track: \(trackItem.track.name) by \(trackItem.track.artists?.map { $0.name }.joined(separator: ", ") ?? "Unknown Track name")")
-                            }
-                        case .failure(let error):
-                            print("Failed to fetch tracks: \(error)")
-                        }
-                    }
-                }
-            case .failure(let error):
-                print("Failed to fetch playlists: \(error)")
             }
         }
     }
@@ -181,11 +121,78 @@ extension PlayerListViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let track = tracks[indexPath.row]
-        let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "TrackCell")
-        cell.textLabel?.text = track.track.name
-        cell.detailTextLabel?.text = track.track.artists?.map { $0.name }.joined(separator: ", ")
+        let trackItem = tracks[indexPath.row]
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: PlayListTrackTableViewCell.identifier, for: indexPath) as? PlayListTrackTableViewCell else {
+            return UITableViewCell()
+        }
+        cell.configure(with: trackItem)
         return cell
     }
-}
 
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let selectedTrack = tracks[indexPath.row]
+        playTrack(selectedTrack)
+        tableView.deselectRow(at: indexPath, animated: true)
+    }
+
+    func playTrack(_ trackItem: PlaylistItemsResponse) {
+        guard let trackURI = trackItem.track?.uri else {
+            print("Track URI is missing")
+            return
+        }
+        
+        SpotifyPlayer.shared.getAvailableDevices { result in
+            switch result {
+            case .success(let devices):
+                print(devices)
+                if let activeDevice = devices.first(where: { $0.isActive ?? false}) {
+                    SpotifyPlayer.shared.playTracks(uri: trackURI, deviceID: activeDevice.id) { result in
+                        switch result {
+                        case .success:
+                            print("Now playing: \(trackItem.track?.name ?? "")")
+                        case .failure(let error):
+                            print("Failed to play track: \(error)")
+                        }
+                    }
+                } else {
+                    print("No active device found.")
+                }
+            case .failure(let error):
+                print("Failed to retrieve devices: \(error)")
+            }
+        }
+
+        
+//
+//        SpotifyPlayer.shared.setVolume(level: 50) { result in
+//            switch result {
+//            case .success:
+//                print("Volume set successfully!")
+//                SpotifyPlayer.shared.playTrack(uri: trackURI) { result in
+//                    switch result {
+//                    case .success:
+//                        print("Now playing: \(trackItem.track?.name ?? "")")
+//                    case .failure(let error):
+//                        print("Error starting playback: \(error)")
+//                    }
+//                }
+//            case .failure(let error):
+//                print("Error setting volume: \(error)")
+//            }
+//        }
+        
+      
+
+
+
+//        // Example: Use Spotify SDK or API to start playback
+//        SpotifyPlayer.shared.playTrack(uri: trackURI) { result in
+//            switch result {
+//            case .success:
+//                print("Now playing: \(trackItem.track?.name)")
+//            case .failure(let error):
+//                print("Failed to play track: \(error)")
+//            }
+//        }
+    }
+}

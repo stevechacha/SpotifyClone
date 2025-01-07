@@ -8,6 +8,7 @@
 
 import UIKit
 
+
 class TopItemTableViewCell: UITableViewCell {
     static let identifier = "TopItemTableViewCell"
     
@@ -88,28 +89,15 @@ class TopItemTableViewCell: UITableViewCell {
         genresLabel.text = topItem.genres?.joined(separator: ", ") ?? "No genres available"
         
         if let imageUrl = topItem.images?.first?.url {
-            loadImage(from: imageUrl)
-        } 
-    }
-    
-    private func fetchImage(from url: URL, completion: @escaping (UIImage?) -> Void) {
-        let task = URLSession.shared.dataTask(with: url) { data, _, _ in
-            if let data = data, let image = UIImage(data: data) {
-                completion(image)
-            } else {
-                completion(nil)
+            itemImageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image: \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.nameLabel.text ?? "")")
+                }
             }
         }
-        task.resume()
     }
+
     
-    private func loadImage(from urlString: String) {
-        guard let url = URL(string: urlString) else { return }
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            guard let data = data else { return }
-            DispatchQueue.main.async {
-                self?.itemImageView.image = UIImage(data: data)
-            }
-        }.resume()
-    }
 }

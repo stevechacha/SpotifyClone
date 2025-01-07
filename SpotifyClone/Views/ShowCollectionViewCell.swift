@@ -7,10 +7,13 @@
 
 
 import UIKit
+import SDWebImage
 
 class ShowCollectionViewCell: UICollectionViewCell {
     
     static let identifier = "ShowCollectionViewCell"
+ 
+    
     
     private let imageView: UIImageView = {
         let imageView = UIImageView()
@@ -46,18 +49,16 @@ class ShowCollectionViewCell: UICollectionViewCell {
     
     func configure(with show: UsersSavedShowsItems) {
         nameLabel.text = show.show.name
+        
+        // Use SDWebImage to load the image
         if let imageUrl = show.show.images?.first?.url {
-            loadImage(from: imageUrl)
-        }
-    }
-    
-    private func loadImage(from urlString: String) {
-        guard let url = URL(string: urlString) else { return }
-        URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-            guard let data = data else { return }
-            DispatchQueue.main.async {
-                self?.imageView.image = UIImage(data: data)
+            imageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image: \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.nameLabel.text ?? "")")
+                }
             }
-        }.resume()
+        }
     }
 }

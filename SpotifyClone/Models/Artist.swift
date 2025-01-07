@@ -24,7 +24,7 @@ struct Artist: Codable {
     let href: String?
     let id: String
     let images: [APIImage]?
-    let name: String
+    let name: String?
     let popularity: Int?
     let type: String?
     let uri: String?

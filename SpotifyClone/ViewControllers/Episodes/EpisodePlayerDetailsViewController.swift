@@ -25,13 +25,13 @@ class EpisodePlayerDetailsViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setTitle("Play", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .bold)
-        button.addTarget(self, action: #selector(didTapPlayPause), for: .touchUpInside)
+        button.addTarget(EpisodePlayerDetailsViewController.self, action: #selector(didTapPlayPause), for: .touchUpInside)
         return button
     }()
 
     private let slider: UISlider = {
         let slider = UISlider()
-        slider.addTarget(self, action: #selector(didSlideSlider(_:)), for: .valueChanged)
+        slider.addTarget(EpisodePlayerDetailsViewController.self, action: #selector(didSlideSlider(_:)), for: .valueChanged)
         return slider
     }()
 

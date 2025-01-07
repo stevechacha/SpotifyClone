@@ -77,19 +77,15 @@ class SavedEpisodeTableViewCell: UITableViewCell {
         descriptionLabel.text = episode.episode?.description ?? "No description available."
         
         // Assuming episode has an image URL, load the image
-        if let imageUrl = episode.episode?.images?.first?.url, let url = URL(string: imageUrl) {
-            // Load image asynchronously
-            loadImage(from: url)
+        if let imageUrl = episode.episode?.images?.first?.url {
+            episodeImageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image: \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.titleLabel.text ?? "")")
+                }
+            }
         }
     }
     
-    private func loadImage(from url: URL) {
-        // Use a simple image loading method (considering caching with a library like SDWebImage or similar)
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data = data, let image = UIImage(data: data) else { return }
-            DispatchQueue.main.async {
-                self.episodeImageView.image = image
-            }
-        }.resume()
-    }
 }

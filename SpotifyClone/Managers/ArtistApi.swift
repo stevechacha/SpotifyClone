@@ -61,6 +61,18 @@ final class ArtistApiCaller {
     }
 
 
+    func getArtistDetails(
+        artistID: String,
+        completion: @escaping (Result<SpotifyArtistsDetailResponse, Error>) -> Void
+    ) {
+        guard let url = URL(string: "\(Constants.artistBaseUrl)/\(artistID)") else {
+            completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
+            return
+        }
+
+        performRequest(url: url, responseType: SpotifyArtistsDetailResponse.self, completion: completion)
+    }
+
 
     func getSeveralArtists(
         artistIDs: [String],
@@ -77,18 +89,7 @@ final class ArtistApiCaller {
         performRequest(url: url, responseType: SpotifyArtistsResponse.self, completion: completion)
     }
 
-    func getArtistDetails(
-        artistID: String,
-        completion: @escaping (Result<SpotifyArtistsDetailResponse, Error>) -> Void
-    ) {
-        guard let url = URL(string: "\(Constants.artistBaseUrl)/\(artistID)") else {
-            completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
-            return
-        }
-
-        performRequest(url: url, responseType: SpotifyArtistsDetailResponse.self, completion: completion)
-    }
-
+  
     func getArtistAlbums(
         artistID: String,
         completion: @escaping (Result<SpotifyArtistsAlbumsResponse, Error>) -> Void
@@ -105,21 +106,16 @@ final class ArtistApiCaller {
 
     func getArtistsTopTracks(
         for artistID: String,
-        market: String = "US",
         completion: @escaping (Result<SpotifyArtistsTopTracksResponse, Error>) -> Void
     ) {
-        guard let url = constructURL(
-            base: "\(Constants.artistBaseUrl)/\(artistID)/top-tracks",
-            parameters: ["market": market]
-        ) else {
+        guard let url = URL(string: "\(Constants.artistBaseUrl)/\(artistID)/top-tracks") else {
             completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
             return
         }
-
         performRequest(url: url, responseType: SpotifyArtistsTopTracksResponse.self, completion: completion)
     }
 
-    func getArtistsRelatedArtists(
+    func getRelatedArtists(
         artistID: String,
         completion: @escaping (Result<SpotifyArtistRelatedArtistsResponse, Error>) -> Void
     ) {

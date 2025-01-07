@@ -91,6 +91,7 @@ final class AlbumApiCaller {
     }
 
 
+    // MARK: - Get  Albums Tracks
     func getAllAlbumTracks(albumID: String, completion: @escaping (Result<[Track], ApiError>) -> Void) {
         var allTracks: [Track] = []
         var nextURL: String? = "\(Constants.albumsEndpoint)\(albumID)/tracks"
@@ -123,7 +124,7 @@ final class AlbumApiCaller {
     }
 
     // MARK: - Get User's Saved Albums
-    func getSavedAlbums(completion: @escaping (Result<SpotifyUsersAlbumSavedResponse, ApiError>) -> Void) {
+    func getUserSavedAlbums(completion: @escaping (Result<SpotifyUsersAlbumSavedResponse, ApiError>) -> Void) {
         guard let url = URL(string: Constants.savedAlbumsEndpoint) else {
             completion(.failure(.invalidURL))
             return
@@ -241,7 +242,7 @@ final class AlbumApiCaller {
     }
     
     func fetchAlbumIDs(completion: @escaping (Result<[String], Error>) -> Void) {
-            AlbumApiCaller.shared.getSavedAlbums { result in
+            AlbumApiCaller.shared.getUserSavedAlbums { result in
                 switch result {
                 case .success(let savedAlbumsResponse):
                     // Extract album IDs from the response

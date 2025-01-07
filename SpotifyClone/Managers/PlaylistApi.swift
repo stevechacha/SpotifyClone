@@ -18,6 +18,51 @@ final class PlaylistApiCaller {
         static let baseAPIURL = "https://api.spotify.com/v1"
     }
     
+    // MARK: - Get Playlist by ID
+    public func getPlaylistDetails(playlistID: String, completion: @escaping (Result<Playlists, Error>) -> Void) {
+        guard let url = URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)") else { return }
+        
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                do {
+                    let response = try JSONDecoder().decode(Playlists.self, from: data)
+                    completion(.success(response))
+                } catch {
+                    print("Error decoding Playlists: \(error)")
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    
+    // MARK: - Get Playlist Tracks
+    public func getPlaylistTracks(playlistID: String, completion: @escaping (Result<PlaylistTracksResponse, Error>) -> Void) {
+        guard let url = URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)/tracks") else { return }
+        
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                do {
+                    let response = try JSONDecoder().decode(PlaylistTracksResponse.self, from: data)
+                    completion(.success(response))
+                } catch {
+                    print("Error decoding PlaylistTracksResponse: \(error)")
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
     // MARK: - Get Current User's Playlists
     public func getCurrentUsersPlaylist(completion: @escaping (Result<CurrentUsersPlaylistsResponse, Error>) -> Void) {
         AuthManager.shared.createRequest(with: URL(string: "\(Constants.baseAPIURL)/me/playlists"), type: .GET) { request in
@@ -28,6 +73,38 @@ final class PlaylistApiCaller {
                 }
                 do {
                     let response = try JSONDecoder().decode(CurrentUsersPlaylistsResponse.self, from: data)
+                    completion(.success(response))
+                } catch {
+                    print("Error decoding CurrentUsersPlaylistsResponse: \(error)")
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    // MARK: - Get Current User's Playlists
+    public func getRecentlyPlayed(completion: @escaping (Result<RecentlyPlayedResponse, Error>) -> Void) {
+        AuthManager.shared.createRequest(with: URL(string: "https://api.spotify.com/v1/me/player/recently-played"), type: .GET) { request in
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("Status Code: \(httpResponse.statusCode)")
+                    guard (200...299).contains(httpResponse.statusCode) else {
+                        completion(.failure(ApiError.failedToGetData))
+                        return
+                    }
+                }
+                
+                // Debugging: Log raw data
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Response JSON: \(jsonString)")
+                }
+                do {
+                    let response = try JSONDecoder().decode(RecentlyPlayedResponse.self, from: data)
                     completion(.success(response))
                 } catch {
                     print("Error decoding CurrentUsersPlaylistsResponse: \(error)")
@@ -95,49 +172,8 @@ final class PlaylistApiCaller {
 
     
     
-    // MARK: - Get Playlist by ID
-    public func getPlaylist(playlistID: String, completion: @escaping (Result<Playlists, Error>) -> Void) {
-        guard let url = URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)") else { return }
-        
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                do {
-                    let response = try JSONDecoder().decode(Playlists.self, from: data)
-                    completion(.success(response))
-                } catch {
-                    print("Error decoding Playlists: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
-    }
     
-    // MARK: - Get Playlist Tracks
-    public func getPlaylistTracks(playlistID: String, completion: @escaping (Result<PlaylistTracksResponse, Error>) -> Void) {
-        guard let url = URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)/tracks") else { return }
-        
-        AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                do {
-                    let response = try JSONDecoder().decode(PlaylistTracksResponse.self, from: data)
-                    completion(.success(response))
-                } catch {
-                    print("Error decoding PlaylistTracksResponse: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
-    }
+   
     
     // MARK: - Get Playlist Cover Image
     public func getPlaylistCoverImage(playlistID: String, completion: @escaping (Result<[APIImage], Error>) -> Void) {
@@ -177,7 +213,7 @@ final class PlaylistApiCaller {
         
         // Fetch Playlist Details
         dispatchGroup.enter()
-        getPlaylist(playlistID: playlistID) { result in
+        getPlaylistDetails(playlistID: playlistID) { result in
             switch result {
             case .success(let playlistDetails):
                 combinedResponse["PlaylistDetails"] = playlistDetails

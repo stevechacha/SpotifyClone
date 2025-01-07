@@ -138,7 +138,7 @@ final class TrackApiCaller {
                 do {
                     let result = try JSONDecoder().decode(SearchTrackResponse.self, from: data)
                     if let firstTrack = result.tracks.items?.first  {
-                        completion(.success(firstTrack.id))
+                        completion(.success(firstTrack.id ?? ""))
                     } else {
                         completion(.failure(ApiError.decodeError))
                     }
@@ -169,8 +169,8 @@ final class TrackApiCaller {
                 }
                 do {
                     let searchResponse = try JSONDecoder().decode(SearchResponses.self, from: data)
-                    let trackIDs = searchResponse.tracks?.items.map { $0.id }
-                    completion(.success(trackIDs!))
+                    let trackIDs = searchResponse.tracks?.items.map { $0.id ?? "" }
+                    completion(.success(trackIDs ?? [])) // Provide a default value here
                 } catch {
                     completion(.failure(error))
                 }
@@ -208,8 +208,8 @@ final class TrackApiCaller {
                 }
                 do {
                     let playlistTracksResponse = try JSONDecoder().decode(PlaylistTracksResponse.self, from: data)
-                    let trackIDs = playlistTracksResponse.items.map { $0.track.id }
-                    completion(.success(trackIDs ))
+                    let trackIDs = playlistTracksResponse.items?.map { $0.track?.id ?? ""}
+                    completion(.success(trackIDs ?? []))
                 } catch {
                     completion(.failure(error))
                 }

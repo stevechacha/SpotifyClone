@@ -75,6 +75,17 @@ class SavedPodcastTableViewCell: UITableViewCell {
         if let imageUrlString = podcast.show.images?.first?.url, let imageUrl = URL(string: imageUrlString) {
             loadImage(from: imageUrl)
         }
+        
+        if let imageUrl = podcast.show.images?.first?.url {
+            podcastImageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image: \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.titleLabel.text ?? "")")
+                }
+            }
+        }
+        
     }
     
     private func loadImage(from url: URL) {

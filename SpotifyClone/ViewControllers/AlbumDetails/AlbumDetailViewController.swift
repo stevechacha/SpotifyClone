@@ -11,6 +11,7 @@ import UIKit
 class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     private let album: Album
     private var tracks: [Track] = []
+   
     
     private let albumImageView: UIImageView = {
         let imageView = UIImageView()
@@ -85,6 +86,8 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         artistLabel.translatesAutoresizingMaskIntoConstraints = false
         releaseDateLabel.translatesAutoresizingMaskIntoConstraints = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.register(AlbumTrackTableViewCell.self, forCellReuseIdentifier: AlbumTrackTableViewCell.identifier)
+
         
         // Add Auto Layout constraints
         NSLayoutConstraint.activate([
@@ -118,7 +121,7 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         
         // Configure UI elements
         albumNameLabel.text = album.name ?? "Unknown Album"
-        artistLabel.text = album.artists?.map { $0.name }.joined(separator: ", ") ?? "Unknown Artist"
+        artistLabel.text = album.artists?.map { $0.name ?? "" }.joined(separator: ", ") ?? "Unknown Artist"
         releaseDateLabel.text = "Released: \(album.releaseDate ?? "Unknown Date")"
         
         if let imageUrlString = album.images?.first?.url, let imageUrl = URL(string: imageUrlString) {
@@ -162,14 +165,14 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "TrackCell", for: indexPath)
-        let track = tracks[indexPath.row]
-        let durationMinutes = track.durationMs! / 1000 / 60
-        let durationSeconds = (track.durationMs! / 1000) % 60
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: AlbumTrackTableViewCell.identifier, for: indexPath) as? AlbumTrackTableViewCell else {
+            return UITableViewCell()
+        }
         
-        cell.textLabel?.text = "\(track.name) (\(durationMinutes):\(String(format: "%02d", durationSeconds)))"
-        cell.textLabel?.numberOfLines = 2
+        let track = tracks[indexPath.row]
+        cell.configure(with: track)
         return cell
     }
+
 }
 

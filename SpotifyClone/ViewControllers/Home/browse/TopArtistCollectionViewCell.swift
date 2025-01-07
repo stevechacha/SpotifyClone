@@ -90,20 +90,19 @@ class TopArtistCollectionViewCell: UICollectionViewCell {
         titleLabel.text = viewModel.name
         artistLabel.text = viewModel.type.capitalized
         // Handle image loading with placeholder
+        // Use SDWebImage to load the image with caching and a placeholder
         if let url = viewModel.imageUrl {
-            loadImage(from: url)
+            albumImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image for \(self?.titleLabel.text ?? "unknown"): \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.titleLabel.text ?? "unknown")")
+                }
+            }
         } else {
             albumImageView.image = UIImage(named: "placeholder") // Replace with your placeholder image name
         }
     }
     
-    private func loadImage(from url: URL) {
-        DispatchQueue.global().async {
-            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    self.albumImageView.image = image
-                }
-            }
-        }
-    }
+   
 }

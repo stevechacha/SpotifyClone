@@ -123,7 +123,7 @@ class TracksViewController: UIViewController {
     }
 
     private func updateUI(with track: Track) {
-        trackNameLabel.text = "Track: \(track.name)"
+        trackNameLabel.text = "Track: \(track.name ?? "Unknown Track")"
         artistLabel.text = "Artist: \(track.artists?.first?.name ?? "Unknown Artist")"
         albumLabel.text = "Album: \(track.album?.name ?? "Unknown Album")"
         

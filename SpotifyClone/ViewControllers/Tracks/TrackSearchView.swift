@@ -62,7 +62,7 @@ struct TrackSearchView: View {
                             .cornerRadius(8)
 
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(track.name)
+                                Text(track.name ?? "Unknown Track")
                                     .font(.headline)
                                     .foregroundColor(.primary)
                                 

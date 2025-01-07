@@ -119,7 +119,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         
         // Fetch Albums
         group.enter()
-        AlbumApiCaller.shared.getSavedAlbums { [weak self] result in
+        AlbumApiCaller.shared.getUserSavedAlbums { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):

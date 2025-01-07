@@ -157,7 +157,7 @@ class TracksTableViewCell: UITableViewCell {
     func configure(with track: Track) {
         trackNameLabel.text = track.name
         artistNameLabel.text = track.artists?.first?.name
-        if let imageUrl = URL(string: track.album?.images?.first?.url ?? "") {
+        if URL(string: track.album?.images?.first?.url ?? "") != nil {
             // Load the image asynchronously
         }
     }

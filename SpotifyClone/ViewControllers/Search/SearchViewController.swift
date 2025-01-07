@@ -8,7 +8,21 @@
 
 import UIKit
 
-class HomeSearchViewController: UIViewController {
+
+// MARK: - Models & Services
+enum SearchResult {
+    case track(Track)
+    case artist(Artist)
+    case album(Album)
+    case playlist(PlaylistItem)
+    case audiobook(Audiobook)
+    case show(Show)
+    case episode(Episode)
+    case chapter(Chapter)
+}
+
+
+class SearchViewController: UIViewController {
     
     // MARK: - Properties
     private let searchBar = UISearchBar()
@@ -103,7 +117,7 @@ class HomeSearchViewController: UIViewController {
 }
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
-extension HomeSearchViewController: UITableViewDelegate, UITableViewDataSource {
+extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return searchResults.count
     }
@@ -160,7 +174,7 @@ extension HomeSearchViewController: UITableViewDelegate, UITableViewDataSource {
 }
 
 // MARK: - UISearchBarDelegate
-extension HomeSearchViewController: UISearchBarDelegate {
+extension SearchViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         // Cancel any previous search work item to avoid race conditions
         searchWorkItem?.cancel()
@@ -182,17 +196,5 @@ extension HomeSearchViewController: UISearchBarDelegate {
         search(query: query)
         searchBar.resignFirstResponder()
     }
-}
-
-// MARK: - Models & Services
-enum SearchResult {
-    case track(Track)
-    case artist(Artist)
-    case album(Album)
-    case playlist(PlaylistItem)
-    case audiobook(Audiobook)
-    case show(Show)
-    case episode(Episode)
-    case chapter(Chapter)
 }
 

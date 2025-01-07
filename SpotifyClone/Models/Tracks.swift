@@ -40,14 +40,14 @@ struct Track: Codable {
     let externalUrls: ExternalUrls?
     let externalIds: ExternalIds?
     let href: String?
-    let id: String
+    let id: String?
     let isPlayable: Bool?
     let linkedFrom: LinkedFrom?
     let restrictions: Restrictions?
-    let name: String
+    let name: String?
     let popularity: Int?
     let previewUrl: String?
-    let trackNumber: Int
+    let trackNumber: Int?
     let type: String?
     let uri: String?
     let isLocal: Bool?

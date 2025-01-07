@@ -35,7 +35,7 @@ class PlaylistViewModel: ObservableObject {
  
     
     func fetchPlaylistDetails(playlistID: String) {
-        PlaylistApiCaller.shared.getPlaylist(playlistID: playlistID) { [weak self] result in
+        PlaylistApiCaller.shared.getPlaylistDetails(playlistID: playlistID) { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let playlist):

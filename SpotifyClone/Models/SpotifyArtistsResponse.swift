@@ -13,7 +13,7 @@ struct SpotifyArtistsResponse: Codable  {
 
 struct Followers: Codable {
     let href: String?
-    let total: Int
+    let total: Int?
 }
 
 struct SpotifyArtistsDetailResponse: Codable {

@@ -26,7 +26,7 @@ struct TrackDetailView: View {
                 .padding()
 
                 // Track Name
-                Text(track.name)
+                Text(track.name ?? "")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)

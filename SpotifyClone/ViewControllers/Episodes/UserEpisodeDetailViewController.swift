@@ -39,7 +39,7 @@ class UserEpisodeDetailViewController: UIViewController {
         button.backgroundColor = .systemBlue
         button.layer.cornerRadius = 8
         button.titleLabel?.font = .systemFont(ofSize: 18, weight: .bold)
-        button.addTarget(self, action: #selector(didTapPlay), for: .touchUpInside)
+        button.addTarget(UserEpisodeDetailViewController.self, action: #selector(didTapPlay), for: .touchUpInside)
         return button
     }()
 

@@ -73,8 +73,14 @@ class SavedAlbumTableViewCell: UITableViewCell {
         titleLabel.text = album.name ?? "Unknown Album"
         artistLabel.text = album.artists?.map { $0.name ?? "default value" }.joined(separator: ", ") ?? "Unknown Artist"
         
-        if let imageUrlString = album.images?.first?.url, let imageUrl = URL(string: imageUrlString) {
-            loadImage(from: imageUrl)
+        if let imageUrl = album.images?.first?.url {
+            albumImageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+                if let error = error {
+                    print("Failed to load image: \(error.localizedDescription)")
+                } else {
+                    print("Image loaded successfully for: \(self?.titleLabel.text ?? "")")
+                }
+            }
         }
     }
     

@@ -11,24 +11,42 @@ final class AuthManager {
     private var refreshingToken = false
     private var onRefreshingBlocks = [((String) -> Void)]()
 
+   
     
     // MARK: - Constants
-      struct Constants {
-          static let clientID = "CLIENT ID" // Replace with your client ID
-          static let clientSecret = "CLIENT SECRET" // Replace with your client secret
-          static let tokenAPIURL = "https://accounts.spotify.com/api/token"
-          static let redirectURI = "http://localhost:3000/callback" // Replace with your registered redirect URI
-          static let scopes = [
-              "user-read-private",
-              "user-read-email",
-              "playlist-read-private",
-              "playlist-modify-public",
-              "user-library-read",
-              "user-top-read",
-              "streaming"
-          ].joined(separator: " ")
-          
-      }
+    struct Constants {
+        static let clientID = "CLIENT ID" // Replace with your client ID
+        static let clientSecret = "CLIENT SECRET" // Replace with your client secret
+        static let tokenAPIURL = "https://accounts.spotify.com/api/token"
+        static let redirectURI = "http://localhost:3000/callback" // Replace with your registered redirect URI
+        static let scopes = [
+            "user-follow-read",
+            "user-read-private",
+            "user-read-email",
+            "playlist-read-private",
+            "playlist-modify-public",
+            "ugc-image-upload",
+            "user-read-recently-played",
+            "user-read-playback-state",
+            "user-modify-playback-state",
+            "user-read-currently-playing",
+            "user-read-private",
+            "user-read-email",
+            "user-library-modify",
+            "user-library-read",
+            "playlist-read-private",
+            "playlist-modify-private",
+            "playlist-read-collaborative",
+            "playlist-modify-public",
+            "user-top-read",
+            "app-remote-control",
+            "streaming",
+            "user-follow-modify",
+            "user-read-playback-position",
+            "user-modify-playback-state ",
+            "user-read-playback-state"
+        ].joined(separator: " ")
+    }
 
     
     private init() {}
