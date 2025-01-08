@@ -7,6 +7,7 @@
 
 
 import Foundation
+import UIKit
 
 final class ChapterApiCaller {
     
@@ -21,11 +22,48 @@ final class ChapterApiCaller {
     
     
     
-    // MARK: - Generic API Fetch Function
+//    // MARK: - Generic API Fetch Function
+//    private func fetch<T: Decodable>(
+//        endpoint: String,
+//        type: AuthManager.HTTPMethod,
+//        responseType: T.Type,
+//        completion: @escaping (Result<T, Error>) -> Void
+//    ) {
+//        let urlString = Constants.baseAPURL + endpoint
+//        guard let url = URL(string: urlString) else {
+//            completion(.failure(ApiError.invalidURL))
+//            return
+//        }
+//        
+//        AuthManager.shared.createRequest(with: url, type: type) { request in
+//            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+//                if let error = error {
+//                    completion(.failure(ApiError.apiError(error.localizedDescription)))
+//                    return
+//                }
+//                
+//                guard let data = data else {
+//                    completion(.failure(ApiError.failedToGetData))
+//                    return
+//                }
+//                
+//                do {
+//                    let decodedResponse = try JSONDecoder().decode(T.self, from: data)
+//                    completion(.success(decodedResponse))
+//                } catch {
+//                    completion(.failure(ApiError.decodingError(error.localizedDescription)))
+//                }
+//            }
+//            task.resume()
+//        }
+//    }
+    
+    // MARK: - Helper Methods
     private func fetch<T: Decodable>(
         endpoint: String,
         type: AuthManager.HTTPMethod,
         responseType: T.Type,
+        retryCount: Int = 3,
         completion: @escaping (Result<T, Error>) -> Void
     ) {
         let urlString = Constants.baseAPURL + endpoint
@@ -34,27 +72,89 @@ final class ChapterApiCaller {
             return
         }
         
-        AuthManager.shared.createRequest(with: url, type: type) { request in
+        AuthManager.shared.createRequest(with: url,type: .GET) { request in
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    completion(.failure(ApiError.apiError(error.localizedDescription)))
-                    return
-                }
-                
-                guard let data = data else {
+                guard let data = data, error == nil else {
                     completion(.failure(ApiError.failedToGetData))
                     return
                 }
                 
+                if let httpResponse = response as? HTTPURLResponse {
+                    print("Status Code: \(httpResponse.statusCode)")
+                    
+                    // Handle Rate Limit Exceeded (429)
+                    if httpResponse.statusCode == 429 {
+                        if let retryAfterString = httpResponse.value(forHTTPHeaderField: "Retry-After"),
+                           let retryAfter = Double(retryAfterString) {
+                            print("Rate limit exceeded. Retrying after \(retryAfter) seconds.")
+                            
+                            // Show feedback to the user that a wait is required
+                            DispatchQueue.main.async {
+                                let alert = UIAlertController(
+                                    title: "Rate Limit Exceeded",
+                                    message: "Please wait for \(Int(retryAfter)) seconds before trying again.",
+                                    preferredStyle: .alert
+                                )
+                                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                                // Present alert to the user
+                                if let viewController = self.topMostViewController() {
+                                    viewController.present(alert, animated: true, completion: nil)
+                                }
+                            }
+                            
+                            // Wait before retrying based on Retry-After header
+                            DispatchQueue.global().asyncAfter(deadline: .now() + retryAfter) {
+                                self.fetch(
+                                    endpoint: urlString,
+                                    type: type,
+                                    responseType: responseType,
+                                    retryCount: retryCount - 1,
+                                    completion: completion
+                                )
+                            }
+                        }
+                        return
+                    }
+                    
+                    guard (200...299).contains(httpResponse.statusCode) else {
+                        completion(.failure(ApiError.failedToGetData))
+                        return
+                    }
+                }
+                
+                // Debugging: Log raw data
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Response JSON: \(jsonString)")
+                }
+                
                 do {
-                    let decodedResponse = try JSONDecoder().decode(T.self, from: data)
-                    completion(.success(decodedResponse))
+                    let result = try JSONDecoder().decode(responseType, from: data)
+                    completion(.success(result))
                 } catch {
+                    // Log raw response for debugging
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        print("Raw Response: \(responseString)")
+                    }
                     completion(.failure(ApiError.decodingError(error.localizedDescription)))
                 }
             }
             task.resume()
         }
+    }
+    
+    // Helper function to get the top-most view controller
+    func topMostViewController() -> UIViewController? {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
+            var topController = window.rootViewController
+            
+            while let presentedVC = topController?.presentedViewController {
+                topController = presentedVC
+            }
+            
+            return topController
+        }
+        return nil
     }
     
     

@@ -9,7 +9,8 @@
 import UIKit
 
 class TrackDetailViewController: UIViewController {
-    private let track: Track
+    private let trackID: String
+    private var track: Track?
 
     // UI Elements
     private let albumImageView = UIImageView()
@@ -18,8 +19,8 @@ class TrackDetailViewController: UIViewController {
     private let albumNameLabel = UILabel()
     private let previewButton = UIButton(type: .system)
 
-    init(track: Track) {
-        self.track = track
+    init(trackID: String) {
+        self.trackID = trackID
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -30,8 +31,9 @@ class TrackDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        title = "Track Details"
         setupUI()
-        configureUI()
+        fetchTrackDetails()
     }
 
     private func setupUI() {
@@ -101,7 +103,19 @@ class TrackDetailViewController: UIViewController {
         ])
     }
 
+    private func fetchTrackDetails() {
+        // Here you would fetch the track details using the trackID
+        // For example, using a service or API call (this is just a placeholder)
+//        TrackApiCaller.shared.getTrack(trackID: trackID) { [weak self] (track) in
+//            guard let self = self, let track = track else { return }
+//            self.track = track.flatMap(<#T##(Success) -> Result<NewSuccess, Failure>#>)
+//            self.configureUI()
+//        }
+    }
+
     private func configureUI() {
+        guard let track = track else { return }
+
         // Configure UI with track details
         if let albumImageUrl = URL(string: track.album?.images?.first?.url ?? "") {
             // Load the album image (you could use a library like SDWebImage or URLSession for async loading)
@@ -125,7 +139,7 @@ class TrackDetailViewController: UIViewController {
     }
 
     @objc private func previewButtonTapped() {
-        guard let previewUrlString = track.previewUrl,
+        guard let track = track, let previewUrlString = track.previewUrl,
               let previewUrl = URL(string: previewUrlString) else { return }
 
         // Open the preview URL in the default browser

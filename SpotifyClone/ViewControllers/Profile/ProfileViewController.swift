@@ -49,7 +49,6 @@ class ProfileViewController: UIViewController {
     }()
     
     // MARK: - Data Properties
-    
     private var topItems: [TopItem] = []
     private var recentlyPlayed: [RecentlyPlayedItem] = []
     private var playlists: [PlaylistItem] = []
@@ -59,7 +58,6 @@ class ProfileViewController: UIViewController {
     private var isPlaylistsExpanded = false
     
     // MARK: - View Lifecycle
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
@@ -73,7 +71,6 @@ class ProfileViewController: UIViewController {
     }
     
     // MARK: - Setup UI
-    
     private func setupUI() {
         view.addSubview(profileImageView)
         view.addSubview(nameLabel)
@@ -149,7 +146,7 @@ class ProfileViewController: UIViewController {
     }
     
     private func fetchRecentlyPlayed() {
-        PlaylistApiCaller.shared.getRecentlyPlayed { [weak self] result in
+        SpotifyPlayer.shared.getRecentlyPlayed { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let items):
@@ -180,7 +177,7 @@ class ProfileViewController: UIViewController {
     
     private func updateUI(with profile: UserProfile) {
         nameLabel.text = profile.display_name
-        emailLabel.text = profile.email
+        emailLabel.text = profile.country
         
         if let imageUrl = profile.images?.first?.url, let url = URL(string: imageUrl) {
             fetchImage(from: url) { [weak self] image in

@@ -104,7 +104,7 @@ class TrackSearchViewController: UIViewController, UITableViewDelegate, UITableV
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let track = tracks[indexPath.row]
-        let detailVC = TrackDetailViewController(track: track)
+        let detailVC = TrackDetailViewController(trackID: track.id ?? "")
         navigationController?.pushViewController(detailVC, animated: true)
     }
 }

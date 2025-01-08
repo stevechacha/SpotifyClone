@@ -83,37 +83,7 @@ final class PlaylistApiCaller {
         }
     }
     
-    // MARK: - Get Current User's Playlists
-    public func getRecentlyPlayed(completion: @escaping (Result<RecentlyPlayedResponse, Error>) -> Void) {
-        AuthManager.shared.createRequest(with: URL(string: "https://api.spotify.com/v1/me/player/recently-played"), type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("Status Code: \(httpResponse.statusCode)")
-                    guard (200...299).contains(httpResponse.statusCode) else {
-                        completion(.failure(ApiError.failedToGetData))
-                        return
-                    }
-                }
-                
-                // Debugging: Log raw data
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("Response JSON: \(jsonString)")
-                }
-                do {
-                    let response = try JSONDecoder().decode(RecentlyPlayedResponse.self, from: data)
-                    completion(.success(response))
-                } catch {
-                    print("Error decoding CurrentUsersPlaylistsResponse: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
-    }
+  
     
     // MARK: - Save a Playlist
     public func savePlaylist(playlistID: String, completion: @escaping (Result<Playlists, Error>) -> Void) {
@@ -126,7 +96,6 @@ final class PlaylistApiCaller {
                 
                 do {
                     let result = try JSONDecoder().decode(Playlists.self, from: data)
-                    print(result)
                     completion(.success(result))
                 } catch {
                     print("Error decoding Playlists: \(error)")
@@ -171,9 +140,6 @@ final class PlaylistApiCaller {
     }
 
     
-    
-    
-   
     
     // MARK: - Get Playlist Cover Image
     public func getPlaylistCoverImage(playlistID: String, completion: @escaping (Result<[APIImage], Error>) -> Void) {

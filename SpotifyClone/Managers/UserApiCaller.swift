@@ -43,7 +43,7 @@ final class UserApiCaller {
                 
                 do {
                     let userProfile = try JSONDecoder().decode(UserProfile.self, from: data)
-                    print(userProfile)
+//                    print(userProfile)
                     completion(.success(userProfile))
                 } catch {
                     print("Decoding Error: \(error.localizedDescription)")
@@ -88,24 +88,24 @@ final class UserApiCaller {
         AuthManager.shared.createRequest(
             with: URL(string: Constants.baseApiUrl + "/users/\(userID)"),
             type: .GET
-        ){ baseRequest in
-            let task = URLSession.shared.dataTask(with: baseRequest) { data , response, error in
+        ){ request in
+            let task = URLSession.shared.dataTask(with: request) { data , response, error in
                 guard let data = data , error == nil else {
                     completion(.failure(ApiError.failedToGetData))
                     return
                 }
                 
-                if let response = response as? HTTPURLResponse {
-                    print("Response Code: \(response.statusCode)")
-                }
+//                if let response = response as? HTTPURLResponse {
+//                    print(" From UserApi Response Code: \(response.statusCode)")
+//                }
                 
                 
                 do {
                     let userProfile = try JSONDecoder().decode(UserProfile.self, from: data)
-                    print(userProfile)
+//                    print(userProfile)
                     completion(.success(userProfile))
                 } catch {
-                    print("Decoding Error: \(error.localizedDescription)")
+//                    print("Decoding Error: \(error.localizedDescription)")
                     completion(.failure(error))
                 }
             }
@@ -196,7 +196,7 @@ final class UserApiCaller {
                 
                 do {
                     let response = try self.decoder.decode(T.self, from: data)
-                    print(response)
+//                    print(response)
                     completion(.success(response))
                 } catch {
                     completion(.failure(error))

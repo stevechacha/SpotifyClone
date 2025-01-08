@@ -7,8 +7,6 @@
 
 import UIKit
 
-import UIKit
-
 class ArtistViewController: UIViewController {
     
     private let topArtist: TopItem
@@ -19,13 +17,14 @@ class ArtistViewController: UIViewController {
     private var segmentedControl: UISegmentedControl!
     private var tableView: UITableView!
     
+    // Loading indicator
+    private var activityIndicator: UIActivityIndicatorView!
+
     // MARK: - Initializer
     init(topArtist: TopItem) {
         self.topArtist = topArtist
         super.init(nibName: nil, bundle: nil)
     }
-    
-    
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -38,6 +37,7 @@ class ArtistViewController: UIViewController {
         setupHeaderView()
         setupSegmentedControl()
         setupTableView()
+        setupLoadingIndicator()
         
         fetchTopTracks()
         fetchAlbums()
@@ -94,6 +94,10 @@ class ArtistViewController: UIViewController {
         
         // Fetch artist details for genres and followers
         ArtistApiCaller.shared.getArtistDetails(artistID: topArtist.id ?? "") { [weak self] result in
+            DispatchQueue.main.async {
+                self?.stopLoadingIndicator()  // Stop loading once data is fetched
+            }
+            
             switch result {
             case .success(let details):
                 DispatchQueue.main.async {
@@ -142,47 +146,75 @@ class ArtistViewController: UIViewController {
         ])
     }
     
+    // MARK: - Setup Loading Indicator
+    private func setupLoadingIndicator() {
+        activityIndicator = UIActivityIndicatorView(style: .large)
+        activityIndicator.center = view.center
+        activityIndicator.hidesWhenStopped = true
+        view.addSubview(activityIndicator)
+    }
+    
+    // MARK: - Show/Hide Loading Indicator
+    private func startLoadingIndicator() {
+        DispatchQueue.main.async {
+            self.activityIndicator.startAnimating()
+        }
+    }
+    
+    private func stopLoadingIndicator() {
+        DispatchQueue.main.async {
+            self.activityIndicator.stopAnimating()
+        }
+    }
+    
     // MARK: - Fetch Data
     private func fetchTopTracks() {
+        startLoadingIndicator() // Start loading before fetching
         ArtistApiCaller.shared.getArtistsTopTracks(for: topArtist.id ?? "") { [weak self] result in
             switch result {
             case .success(let tracksResponse):
                 self?.topTracks = tracksResponse.tracks
                 DispatchQueue.main.async {
                     self?.tableView.reloadData()
+                    self?.stopLoadingIndicator()  // Stop loading once data is fetched
                 }
             case .failure(let error):
                 print("Error fetching top tracks: \(error)")
+                self?.stopLoadingIndicator()  // Stop loading if there's an error
             }
         }
     }
     
     private func fetchAlbums() {
+        startLoadingIndicator() // Start loading before fetching
         ArtistApiCaller.shared.getArtistAlbums(artistID: topArtist.id ?? "") { [weak self] result in
             switch result {
             case .success(let albumsResponse):
-                self?.albums = albumsResponse.items 
+                self?.albums = albumsResponse.items
                 DispatchQueue.main.async {
                     self?.tableView.reloadData()
+                    self?.stopLoadingIndicator()  // Stop loading once data is fetched
                 }
             case .failure(let error):
                 print("Error fetching albums: \(error)")
+                self?.stopLoadingIndicator()  // Stop loading if there's an error
             }
         }
     }
     
-  
-    
     private func fetchRelatedArtists() {
+        startLoadingIndicator() // Start loading before fetching
         ArtistApiCaller.shared.getRelatedArtists(artistID: topArtist.id ?? "") { [weak self] result in
             switch result {
             case .success(let artists):
                 self?.relatedArtists = artists.artists ?? []
                 DispatchQueue.main.async {
                     self?.tableView.reloadData()
+                    self?.stopLoadingIndicator()  // Stop loading once data is fetched
                 }
             case .failure(let error):
                 print("Error fetching related artists: \(error)")
+                self?.stopLoadingIndicator()  // Stop loading if there's an error
             }
         }
     }

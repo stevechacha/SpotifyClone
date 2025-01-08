@@ -9,11 +9,12 @@ import UIKit
 
 class ArtistDetailViewController: UIViewController {
     
-    private let artist: Artist
+//    private let artist: Artist
+    private let artistID: String
     
     // MARK: - Initializer
-    init(artist: Artist) {
-        self.artist = artist
+    init(artistID: String) {
+        self.artistID = artistID
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -23,7 +24,7 @@ class ArtistDetailViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = artist.name
+        title = "'artist.name'"
 
         // Do any additional setup after loading the view.
     }

@@ -10,7 +10,7 @@ import SwiftUI
 enum BrowseSectionType {
     case playlists(viewModels: [PlaylistCellViewModel])
     case newReleases(viewModels: [NewReleasesCellViewModel])
-    case followedArtistAlbums(viewModels: [FollowedArtistAlbumCellViewModel])
+    case albumsByArtistsYouFollow(viewModels: [FollowedArtistAlbumCellViewModel])
     case recentPlaylist(viewModels: [RecentPlaylistCellViewModel])
     case savedAlbums(viewModels: [SavedAlbumCellViewModel])
     case topArtists(viewModels: [TopArtistCellViewModel])
@@ -20,16 +20,16 @@ enum BrowseSectionType {
 class HomeViewController: UIViewController {
     // MARK: - UI Components
     private let collectionView: UICollectionView = {
-        let layout = HomeViewController.createLayout()
+        let layout = UIHelper.createLayout()
         return UICollectionView(frame: .zero, collectionViewLayout: layout)
     }()
     
-    private let spinner: UIActivityIndicatorView = {
-        let spinner = UIActivityIndicatorView()
-        spinner.tintColor = .label
-        spinner.hidesWhenStopped = true
-        return spinner
+    private let activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        return indicator
     }()
+    
     
     private var sections = [BrowseSectionType]()
     private var filteredSections = [BrowseSectionType]()
@@ -38,7 +38,7 @@ class HomeViewController: UIViewController {
     var savedAlbums: [Album] = []
     var topArtists: [TopItem] = []
     var topTracks: [TopItem] = []
-    var followedArtistAlbums: [FollowedArtist] = []
+    var albumsByArtistsYouFollow: [FollowedArtist] = []
     var recentPlaylist: [RecentlyPlayedItem] = []
     
     
@@ -51,25 +51,16 @@ class HomeViewController: UIViewController {
         fetchData()
     }
     
-    func getRecentlyPlayed(){
-        UserApiCaller.shared.getFollowedArtists { result in
-            switch result {
-            case .success(let response):
-                print("response Followed Played \(response.count)")
-            case .failure(let failure):
-                print(failure)
-            }
-        }
-    }
+ 
     
     // MARK: - UI Setup
     private func setupUI() {
         view.addSubview(collectionView)
-        view.addSubview(spinner)
-        
+        view.addSubview(activityIndicator)
+
         collectionView.translatesAutoresizingMaskIntoConstraints = false
-        spinner.translatesAutoresizingMaskIntoConstraints = false
-        
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+
         
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -77,8 +68,9 @@ class HomeViewController: UIViewController {
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
-            spinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            spinner.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            
         ])
     }
     
@@ -101,7 +93,7 @@ class HomeViewController: UIViewController {
     
     // MARK: - API Calls
     private func fetchData() {
-        spinner.startAnimating()
+        activityIndicator.startAnimating()
         collectionView.isHidden = true // Hide collection view while loading
         
         let group = DispatchGroup()
@@ -111,10 +103,10 @@ class HomeViewController: UIViewController {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
-                    self?.followedArtistAlbums = response
-                    print("response Followed Artist \(response.count)")
-                case .failure(let failure):
-                    print(failure)
+                    self?.albumsByArtistsYouFollow = response
+                case .failure(let error):
+                    print(error)
+                    self?.pressSpotyfyAlertThread(title: "Bad Staff", message: error.localizedDescription ,buttuonTitle: "OK")
                 }
                 group.leave()
             }
@@ -122,14 +114,13 @@ class HomeViewController: UIViewController {
         }
         
         group.enter()
-        PlaylistApiCaller.shared.getRecentlyPlayed{ [weak self] result in
+        SpotifyPlayer.shared.getRecentlyPlayed{ [weak self] result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
                     self?.recentPlaylist = response.items
-                    print("response Recent Played \(response.items.count)")
-                case .failure(let failure):
-                    print(failure)
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(title: "Recent Played", message: error.localizedDescription ,buttuonTitle: "OK")
                 }
                 group.leave()
             }
@@ -144,7 +135,7 @@ class HomeViewController: UIViewController {
                 case .success(let response):
                     self?.playlists = response.items ?? []
                 case .failure(let error):
-                    print("Error Fetching User Playlist: \(error)")
+                    self?.pressSpotyfyAlertThread(title: "Bad Staff", message: error.localizedDescription ,buttuonTitle: "OK")
                 }
                 group.leave()
             }
@@ -158,7 +149,7 @@ class HomeViewController: UIViewController {
                 case .success(let response):
                     self?.newReleases = response.albums.items
                 case .failure(let error):
-                    print("Failed to fetch new releases: \(error)")
+                    self?.pressSpotyfyAlertThread(title: "Failed to fetch new releases", message: error.localizedDescription ,buttuonTitle: "OK")
                 }
                 group.leave()
             }
@@ -171,7 +162,7 @@ class HomeViewController: UIViewController {
                 case .success(let response):
                     self?.savedAlbums = response.items.compactMap { $0.album }
                 case .failure(let error):
-                    print("Failed to fetch saved albums: \(error.localizedDescription)")
+                    self?.pressSpotyfyAlertThread(title: "Failed to fetch saved albums", message: error.localizedDescription ,buttuonTitle: "OK")
                 }
                 group.leave()
             }
@@ -185,7 +176,7 @@ class HomeViewController: UIViewController {
                 case .success(let response):
                     self?.topArtists = response
                 case .failure(let error):
-                    print("Top Artist Error: \(error)")
+                    self?.pressSpotyfyAlertThread(title: "Top Artist Error", message: error.localizedDescription ,buttuonTitle: "OK")
                 }
                 group.leave()
             }
@@ -198,19 +189,16 @@ class HomeViewController: UIViewController {
                 switch result {
                 case .success(let response):
                     self?.topTracks = response
-                    print("API Response: \(response)")
-                    for track in response {
-                        print("Track Name: \(track.name), Image URL: \(track.images?.first?.url ?? "nil")")
-                    }
                 case .failure(let error):
-                    print("Top Tracks Error: \(error)")
+                    self?.pressSpotyfyAlertThread(title: "Top User Tracks Error", message: error.localizedDescription ,buttuonTitle: "OK")
+
                 }
                 group.leave()
             }
         }
         
         group.notify(queue: .main) {
-            self.spinner.stopAnimating()
+            self.activityIndicator.stopAnimating()
             self.collectionView.isHidden = false
             self.configureModels()
             self.filterSections(for: 0)
@@ -241,69 +229,119 @@ class HomeViewController: UIViewController {
         }
         sections.append(.newReleases(viewModels: newReleaseViewModels))
         
+    
         var recentPlaylistViewModels: [RecentPlaylistCellViewModel] = []
         var albumTracksDict: [String: [RecentPlaylistCellViewModel]] = [:]
         var playlistTracksDict: [String: [RecentPlaylistCellViewModel]] = [:]
-        
+        var artistTracksDict: [String: [RecentPlaylistCellViewModel]] = [:]
+        var showTracksDict: [String: [RecentPlaylistCellViewModel]] = [:]
+
         for item in recentPlaylist {
-            guard let objectType = item.track.type else { continue }
-            
+            guard let track = item.track else { continue }
+            guard let name = track.name, let objectType = track.type else { continue }
+
             let viewModel = RecentPlaylistCellViewModel(
-                name: item.track.name ?? "Unknown Track",
-                artUrl: URL(string: item.track.album?.images?.first?.url ?? ""),
+                name: name,
+                artUrl: URL(string: track.album?.images?.first?.url ?? ""),
                 numberOfTracks: 1,
-                artistName: item.track.artists?.first?.name ?? "",
-                objectType: item.track.artists?.first?.type ?? ""
+                artistName: track.artists?.first?.name ?? "Unknown Artist",
+                objectType: objectType
             )
-            
-            // Group based on the source (album or playlist)
-            if objectType == "album", let albumName = item.track.album?.name {
-                albumTracksDict[albumName, default: []].append(viewModel)
-            } else if objectType == "playlist", let playlistName = item.context?.type {
-                playlistTracksDict[playlistName, default: []].append(viewModel)
-            } else {
-                // Standalone tracks or other types
+
+            switch objectType {
+            case "album":
+                print("Album Found: \(track.album?.name ?? "Unknown Album")")
+                if let albumName = track.album?.name {
+                    albumTracksDict[albumName, default: []].append(viewModel)
+                }
+
+            case "playlist":
+                print("Playlist Found: \(item.context?.uri ?? "Unknown Playlist")")
+                if let playlistName = item.context?.uri {
+                    playlistTracksDict[playlistName, default: []].append(viewModel)
+                }
+
+            case "artist":
+                print("Artist Found: \(track.artists?.first?.name ?? "Unknown Artist")")
+                if let artistName = track.artists?.first?.name {
+                    artistTracksDict[artistName, default: []].append(viewModel)
+                }
+
+            case "show":
+                print("Show Found: \(item.context?.uri ?? "Unknown Show")")
+                if let showName = item.context?.uri {
+                    showTracksDict[showName, default: []].append(viewModel)
+                }
+
+            default:
+                print("Unknown Type Found")
                 recentPlaylistViewModels.append(viewModel)
             }
         }
-        
-        // Combine album tracks into a single virtual album entry
-        for (albumName, tracks) in albumTracksDict {
+
+        // Consolidate grouped tracks into single entries by their category (album, playlist, artist, show)
+        albumTracksDict.forEach { albumName, tracks in
             let albumViewModel = RecentPlaylistCellViewModel(
                 name: albumName,
-                artUrl: tracks.first?.artUrl, // Use the first track's album art
+                artUrl: tracks.first?.artUrl,
                 numberOfTracks: tracks.count,
-                artistName: tracks.first?.artistName ?? "",
-                objectType: tracks.first?.objectType ?? "" // Replace with logic to deduce the main artist
+                artistName: tracks.first?.artistName ?? "Unknown Artist",
+                objectType: "album"
             )
             recentPlaylistViewModels.append(albumViewModel)
         }
-        
-        // Combine playlist tracks into their respective playlist entries
-        for (playlistName, tracks) in playlistTracksDict {
+
+        playlistTracksDict.forEach { playlistName, tracks in
             let playlistViewModel = RecentPlaylistCellViewModel(
                 name: playlistName,
-                artUrl: tracks.first?.artUrl, // Use the first track's playlist art
+                artUrl: tracks.first?.artUrl,
                 numberOfTracks: tracks.count,
-                artistName: tracks.first?.artistName ?? "",
-                objectType: tracks.first?.objectType ?? "" // Replace with logic to deduce the main artist
+                artistName: tracks.first?.artistName ?? "Unknown Artist",
+                objectType: "playlist"
             )
             recentPlaylistViewModels.append(playlistViewModel)
         }
-        
-        // Add the final view models to the section
+
+        artistTracksDict.forEach { artistName, tracks in
+            let artistViewModel = RecentPlaylistCellViewModel(
+                name: artistName,
+                artUrl: tracks.first?.artUrl,
+                numberOfTracks: tracks.count,
+                artistName: tracks.first?.artistName ?? "Unknown Artist",
+                objectType: "artist"
+            )
+            recentPlaylistViewModels.append(artistViewModel)
+        }
+
+        showTracksDict.forEach { showName, tracks in
+            let showViewModel = RecentPlaylistCellViewModel(
+                name: showName,
+                artUrl: tracks.first?.artUrl,
+                numberOfTracks: tracks.count,
+                artistName: tracks.first?.artistName ?? "Unknown Artist",
+                objectType: "show"
+            )
+            recentPlaylistViewModels.append(showViewModel)
+        }
+
+        // Now, all `recentPlaylistViewModels` should contain the right information for all types
         sections.append(.recentPlaylist(viewModels: recentPlaylistViewModels))
+
+
+
+
+
         
         // New Releases
-        let follwedArtistAlbumsViewModels = followedArtistAlbums.map {
+        let follwedArtistAlbumsViewModels = albumsByArtistsYouFollow.map {
             FollowedArtistAlbumCellViewModel(
                 name: $0.name,
-               artUrl: URL(string: $0.images?.first?.url ?? ""),
+                artUrl: URL(string: $0.images?.first?.url ?? ""),
                numberOfTracks: $0.popularity ?? 0,
                artistName: $0.genres?.joined(separator: "") ?? ""
            )
        }
-        sections.append(.followedArtistAlbums(viewModels: follwedArtistAlbumsViewModels))
+        sections.append(.albumsByArtistsYouFollow(viewModels: follwedArtistAlbumsViewModels))
         
         
         // Saved Albums
@@ -332,8 +370,6 @@ class HomeViewController: UIViewController {
         // Top Tracks
         let trackViewModels = topTracks.map { track -> TopTrackCellViewModel in
             let imageUrl = URL(string: track.images?.first?.url ?? "")
-            print("Track: \(track.name), Image URL: \(imageUrl?.absoluteString ?? "nil")")
-            
             let trackID = track.id ?? ""
             
             // Initialize the ViewModel with the available data
@@ -349,7 +385,6 @@ class HomeViewController: UIViewController {
                 case .success(let success):
                     // Assuming `success` contains the image URL
                     if let newImageUrlString = success.album?.images?.first?.url, let newImageUrl = URL(string: newImageUrlString) {
-                        print("Updated Image URL for Track \(track.name): \(newImageUrlString)")
                         viewModel.artUrl = newImageUrl
                         
                         // Reload the UI for the specific track
@@ -358,6 +393,7 @@ class HomeViewController: UIViewController {
                         }
                     }
                 case .failure(let error):
+                    self?.pressSpotyfyAlertThread(title: "Bad Staff", message: error.localizedDescription ,buttuonTitle: "OK")
                     print("Failed to fetch track data for \(track.name): \(error.localizedDescription)")
                 }
             }
@@ -394,7 +430,7 @@ class HomeViewController: UIViewController {
             case .topTracks(let viewModels): return !viewModels.isEmpty
             case .savedAlbums(let viewModels): return !viewModels.isEmpty
             case .recentPlaylist(let viewModels): return !viewModels.isEmpty
-            case .followedArtistAlbums(let viewModels): return !viewModels.isEmpty
+            case .albumsByArtistsYouFollow(let viewModels): return !viewModels.isEmpty
             }
         }
         collectionView.reloadData()
@@ -402,44 +438,7 @@ class HomeViewController: UIViewController {
 
     
     
-    
-    
-    // MARK: - Compositional Layout
-    static func createLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { sectionIndex, _ in
-            // Define the item and group size (same as before)
-            let itemSize = NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(0.3),
-                heightDimension: .fractionalWidth(0.45)
-            )
-            let item = NSCollectionLayoutItem(layoutSize: itemSize)
-            item.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8)
-            
-            let groupSize = NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0),
-                heightDimension: .fractionalWidth(0.45)
-            )
-            let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-            
-            let section = NSCollectionLayoutSection(group: group)
-            section.orthogonalScrollingBehavior = .continuous
-            section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)
-            
-            // Add a header to the section
-            let headerSize = NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0),
-                heightDimension: .absolute(44)
-            )
-            let header = NSCollectionLayoutBoundarySupplementaryItem(
-                layoutSize: headerSize,
-                elementKind: UICollectionView.elementKindSectionHeader,
-                alignment: .top
-            )
-            section.boundarySupplementaryItems = [header]
-            
-            return section
-        }
-    }
+
 }
 
 extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSource {
@@ -462,7 +461,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
         case .topTracks: headerTitle = "Top Tracks"
         case .savedAlbums: headerTitle = "Saved Albums"
         case .recentPlaylist: headerTitle = "Recently Played"
-        case .followedArtistAlbums: headerTitle = "Albums for followed Artist"
+        case .albumsByArtistsYouFollow: headerTitle = "Albums by artists you follow"
         }
         
         guard let header = collectionView.dequeueReusableSupplementaryView(
@@ -488,9 +487,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
         case .topTracks(let viewModels): return viewModels.count
         case .savedAlbums(viewModels: let viewModels): return viewModels.count
         case .recentPlaylist(viewModels: let viewModels): return viewModels.count
-        case .followedArtistAlbums(viewModels: let viewModels): return viewModels.count
-
-            
+        case .albumsByArtistsYouFollow(viewModels: let viewModels): return viewModels.count
         }
     }
     
@@ -554,7 +551,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             }
             cell.configure(with: viewModels[indexPath.item])
             return cell
-        case .followedArtistAlbums(let viewModels):
+        case .albumsByArtistsYouFollow(let viewModels):
             guard let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: FollowedArtistAlbumCollectionViewCell.identifier,
                 for: indexPath
@@ -578,7 +575,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             
         case .newReleases:
             let selectedNewRelease = newReleases[indexPath.row]
-            let detailVC = AlbumDetailViewController(album: selectedNewRelease)
+            let detailVC = AlbumDetailViewController(albumID: selectedNewRelease.id ?? "")
             navigationController?.pushViewController(detailVC, animated: true)
             
         case .topArtists:
@@ -588,21 +585,79 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             navigationController?.pushViewController(topArtistVc, animated: true)
             
         case .topTracks:
-            let selectedTrack = topTracks[indexPath.row]
+            let selectedTracks = topTracks[indexPath.row]
             
         case .savedAlbums:
-            let selectedAlbum = savedAlbums[indexPath.row]
-            let detailVC = AlbumDetailViewController(album: selectedAlbum)
+            let selectedSavedAlbum = savedAlbums[indexPath.row]
+            let detailVC = AlbumDetailViewController(albumID: selectedSavedAlbum.id ?? "")
             navigationController?.pushViewController(detailVC, animated: true)
-       
-        case .recentPlaylist:
-            let recentPlaylist = recentPlaylist[indexPath.row]
             
-        case .followedArtistAlbums:
-            let selectedAlbum = followedArtistAlbums[indexPath.row]
+        case .albumsByArtistsYouFollow:
+            let selectedAlbumsByArtistsYouFollow = albumsByArtistsYouFollow[indexPath.row]
+            
+            
+        case .recentPlaylist:
+            // Assuming `selectedItem` is an instance of `RecentlyPlayedItem`
+            let selectedItem = recentPlaylist[indexPath.row]  // recentPlaylist is an array of RecentlyPlayedItem
+
+            if let objectType = selectedItem.context?.type {
+                switch objectType {
+                case "album":
+                    // Navigate to album detail view
+                    if let albumUri = selectedItem.track?.album {
+                        let albumDetailVC = AlbumDetailViewController(albumID: albumUri.uri ?? "")
+                        navigationController?.pushViewController(albumDetailVC, animated: true)
+                    }
+                    
+                case "playlist":
+                    // Navigate to playlist detail view
+                    if let playlistUri = selectedItem.context?.uri {
+                        let playlistDetailVC = PlaylistDetailViewController(playlistID: playlistUri)
+                        navigationController?.pushViewController(playlistDetailVC, animated: true)
+                    }
+                    
+                    
+                case "artist":
+                    // Navigate to artist detail view
+                    if let artistUri = selectedItem.context?.uri {
+                        let artistDetailVC = ArtistDetailViewController(artistID: artistUri)
+                        navigationController?.pushViewController(artistDetailVC, animated: true)
+                    }
+                    
+                case "show":
+                    // Navigate to show detail view
+                    if let showUri = selectedItem.context?.uri {
+                        let showDetailVC = ShowDetailViewController(showID: showUri)
+                        navigationController?.pushViewController(showDetailVC, animated: true)
+                    }
+
+                default:
+                    // Handle unknown or unsupported type
+                    print("Unknown object type")
+                }
+            }
+        default:
+            print("Unhandled playlist case")
         }
     }
+        
+    private func navigateToAlbumDetail(with album: Album) {
+        let albumDetailVC = AlbumDetailViewController(albumID: album.id ?? "")
+        navigationController?.pushViewController(albumDetailVC, animated: true)
+    }
+
+    private func navigateToPlaylistDetail(with playlistID: String) {
+        let playlistDetailVC = PlaylistDetailViewController(playlistID: playlistID)
+        navigationController?.pushViewController(playlistDetailVC, animated: true)
+    }
+
+    private func navigateToTrackDetail(with trackID: String) {
+        let trackDetailVC = TrackDetailViewController(trackID: trackID)
+        navigationController?.pushViewController(trackDetailVC, animated: true)
+    }
+
 }
+
 
 
 
