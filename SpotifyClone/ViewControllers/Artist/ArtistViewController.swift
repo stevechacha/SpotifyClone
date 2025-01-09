@@ -315,6 +315,6 @@ extension ArtistViewController: UITableViewDataSource, UITableViewDelegate {
     
     // Add space between rows by increasing row height
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 50 // Adjust this value to increase or decrease the space between rows
+        return 65 // Adjust this value to increase or decrease the space between rows
     }
 }
