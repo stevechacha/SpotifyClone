@@ -138,19 +138,19 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
         
         switch result {
         case .artist(let artist):
-            let vc = ArtistDetailViewController(artist: artist)
+            let vc = ArtistDetailViewController(artistID: artist.id)
             navigationController?.pushViewController(vc, animated: true)
             
         case .album(let album):
-            let vc = AlbumDetailViewController(album: album)
+            let vc = AlbumDetailViewController(albumID: album.id ?? "")
             navigationController?.pushViewController(vc, animated: true)
             
         case .playlist(let playlist):
-            let vc = PlaylistDetailViewController(playlist: playlist)
+            let vc = PlaylistDetailViewController(playlistID: playlist.id ?? "")
             navigationController?.pushViewController(vc, animated: true)
             
         case .track(let track):
-            let vc = TrackDetailViewController(track: track)
+            let vc = TrackDetailViewController(trackID: track.id ?? "")
             navigationController?.pushViewController(vc, animated: true)
             
         case .audiobook(let audiobook):
@@ -158,7 +158,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
             navigationController?.pushViewController(vc, animated: true)
             
         case .show(let show):
-            let vc = ShowDetailViewController(show: show)
+            let vc = ShowDetailViewController(showID: show.id ?? "")
             navigationController?.pushViewController(vc, animated: true)
             
         case .episode(let episode):

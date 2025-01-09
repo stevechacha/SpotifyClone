@@ -77,17 +77,10 @@ class TopTrackCollectionViewCell: UICollectionViewCell {
     public func configure(with viewModel: TopTrackCellViewModel) {
         titleLabel.text = viewModel.name
         
-        // Use SDWebImage to load the image with caching and a placeholder
         if let url = viewModel.artUrl {
-            albumImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "music.note.list")) { [weak self] image, error, _, _ in
-                if let error = error {
-                    print("Failed to load image for \(self?.titleLabel.text ?? "unknown"): \(error.localizedDescription)")
-                } else {
-                    print("Image loaded successfully for: \(self?.titleLabel.text ?? "unknown")")
-                }
-            }
+            albumImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "music.note.list"))
         } else {
-            albumImageView.image = UIImage(systemName: "music.note.list") // Replace with your placeholder image name
+            albumImageView.image = UIImage(systemName: "music.note.list")
         }
       
     }

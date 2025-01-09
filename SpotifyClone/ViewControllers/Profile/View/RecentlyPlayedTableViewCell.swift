@@ -95,11 +95,11 @@ class RecentlyPlayedTableViewCell: UITableViewCell {
     // MARK: - Configure Cell
     
     func configure(with item: RecentlyPlayedItem) {
-        trackNameLabel.text = item.track.name
-        artistNameLabel.text = item.track.artists.map { $0.first?.name ?? ""}
+        trackNameLabel.text = item.track?.name
+        artistNameLabel.text = item.track?.artists.map { $0.first?.name ?? ""}
         playedAtLabel.text = formatDate(item.playedAt)
         
-        if let imageUrl = item.track.album?.images?.first?.url {
+        if let imageUrl = item.track?.album?.images?.first?.url {
             trackImageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
                 if let error = error {
                     print("Failed to load image: \(error.localizedDescription)")

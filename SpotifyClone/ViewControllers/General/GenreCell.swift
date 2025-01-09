@@ -54,7 +54,7 @@ class GenreCell: UICollectionViewCell {
     }
     
     func configure(with genre: String, artistCount: Int) {
-        genreLabel.text = genre
+        genreLabel.text = genre.capitalized
         artistCountLabel.text = "\(artistCount) artists"
     }
 }

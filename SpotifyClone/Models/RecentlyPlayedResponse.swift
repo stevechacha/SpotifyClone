@@ -16,13 +16,9 @@ struct RecentlyPlayedResponse: Codable {
     let items: [RecentlyPlayedItem]
 }
 
-struct Cursors: Codable {
-    let after: String?
-    let before: String?
-}
 
 struct RecentlyPlayedItem: Codable {
-    let track: Track
+    let track: Track?
     let playedAt: String
     let context: PlayContext?
     
@@ -37,3 +33,9 @@ struct PlayContext: Codable {
     let type: String
     let uri: String
 }
+
+struct Cursors: Codable {
+    let after: String?
+    let before: String?
+}
+

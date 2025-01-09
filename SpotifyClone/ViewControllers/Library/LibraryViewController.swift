@@ -252,7 +252,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         
         switch item {
         case .album(let album):
-            let detailVC = AlbumDetailViewController(album: album)
+            let detailVC = AlbumDetailViewController(albumID: album.id ?? "")
             navigationController?.pushViewController(detailVC, animated: true)
         case .playlist(let playlist):
             let playerListVC = PlayerListViewController(playlist: playlist)

@@ -10,11 +10,12 @@ import UIKit
 class ShowDetailViewController: UIViewController {
     
 
-    private let show: Show
+//    private let show: Show
+    private let showID: String
     
     // MARK: - Initializer
-    init(show: Show) {
-        self.show = show
+    init(showID: String) {
+        self.showID = showID
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -25,7 +26,7 @@ class ShowDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        title = show.name
+        title = "show.name"
 
         // Do any additional setup after loading the view.
     }

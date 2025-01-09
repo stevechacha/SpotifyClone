@@ -91,18 +91,12 @@ class SavedAlbumCollectionViewCell: UICollectionViewCell {
         titleLabel.text = viewModel.name
         artistLabel.text = viewModel.artistName
         tracksLabel.text = viewModel.tracksText
-        // Handle image loading with placeholder
+        
         // Use SDWebImage to load the image with caching and a placeholder
         if let url = viewModel.artUrl {
-            albumImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
-                if let error = error {
-                    print("Failed to load image for \(self?.titleLabel.text ?? "unknown"): \(error.localizedDescription)")
-                } else {
-                    print("Image loaded successfully for: \(self?.titleLabel.text ?? "unknown")")
-                }
-            }
+            albumImageView.sd_setImage(with: url, placeholderImage: UIImage(named: "placeholder"))
         } else {
-            albumImageView.image = UIImage(named: "placeholder") // Replace with your placeholder image name
+            albumImageView.image = UIImage(named: "placeholder") 
         }
     }
 }

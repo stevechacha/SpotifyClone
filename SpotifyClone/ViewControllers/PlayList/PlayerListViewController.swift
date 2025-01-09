@@ -19,11 +19,11 @@ class PlayerListViewController: UIViewController {
     }()
     
     private let loadingIndicator: UIActivityIndicatorView = {
-            let indicator = UIActivityIndicatorView(style: .large)
-            indicator.translatesAutoresizingMaskIntoConstraints = false
-            indicator.color = .gray
-            return indicator
-        }()
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.color = .gray
+        return indicator
+    }()
 
     // Initialize with a playlist
     init(playlist: PlaylistItem) {
@@ -52,12 +52,12 @@ class PlayerListViewController: UIViewController {
     }
     
     func setupLoadingIndicator() {
-           view.addSubview(loadingIndicator)
-           NSLayoutConstraint.activate([
-               loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-               loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-           ])
-       }
+        view.addSubview(loadingIndicator)
+        NSLayoutConstraint.activate([
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        ])
+    }
     
     func getPlaybackState(){
         SpotifyPlayer.shared.getPlaybackState { result in
@@ -141,58 +141,55 @@ extension PlayerListViewController: UITableViewDelegate, UITableViewDataSource {
             return
         }
         
-        SpotifyPlayer.shared.getAvailableDevices { result in
-            switch result {
-            case .success(let devices):
-                print(devices)
-                if let activeDevice = devices.first(where: { $0.isActive ?? false}) {
-                    SpotifyPlayer.shared.playTracks(uri: trackURI, deviceID: activeDevice.id) { result in
-                        switch result {
-                        case .success:
-                            print("Now playing: \(trackItem.track?.name ?? "")")
-                        case .failure(let error):
-                            print("Failed to play track: \(error)")
-                        }
-                    }
-                } else {
-                    print("No active device found.")
-                }
-            case .failure(let error):
-                print("Failed to retrieve devices: \(error)")
-            }
-        }
+//        SpotifyPlayer.shared.getAvailableDevices { result in
+//            switch result {
+//            case .success(let devices):
+//                print(devices)
+//                if let activeDevice = devices.first(where: { $0.isActive ?? false}) {
+//                    SpotifyPlayer.shared.playTracks(uri: trackURI, deviceID: activeDevice.id) { result in
+//                        switch result {
+//                        case .success:
+//                            print("Now playing: \(trackItem.track?.name ?? "")")
+//                        case .failure(let error):
+//                            print("Failed to play track: \(error)")
+//                        }
+//                    }
+//                } else {
+//                    print("No active device found.")
+//                }
+//            case .failure(let error):
+//                print("Failed to retrieve devices: \(error)")
+//            }
+//        }
 
         
 //
-//        SpotifyPlayer.shared.setVolume(level: 50) { result in
-//            switch result {
-//            case .success:
-//                print("Volume set successfully!")
-//                SpotifyPlayer.shared.playTrack(uri: trackURI) { result in
-//                    switch result {
-//                    case .success:
-//                        print("Now playing: \(trackItem.track?.name ?? "")")
-//                    case .failure(let error):
-//                        print("Error starting playback: \(error)")
-//                    }
-//                }
-//            case .failure(let error):
-//                print("Error setting volume: \(error)")
-//            }
-//        }
+        SpotifyPlayer.shared.setVolume(level: 100) { result in
+            switch result {
+            case .success:
+                print("Volume set successfully!")
+                SpotifyPlayer.shared.playTrack(uri: trackURI) { result in
+                    switch result {
+                    case .success:
+                        print("Now playing: \(trackItem.track?.name ?? "")")
+                    case .failure(let error):
+                        print("Error starting playback: \(error)")
+                    }
+                }
+            case .failure(let error):
+                print("Error setting volume: \(error)")
+            }
+        }
         
-      
 
-
-
-//        // Example: Use Spotify SDK or API to start playback
-//        SpotifyPlayer.shared.playTrack(uri: trackURI) { result in
-//            switch result {
-//            case .success:
-//                print("Now playing: \(trackItem.track?.name)")
-//            case .failure(let error):
-//                print("Failed to play track: \(error)")
-//            }
-//        }
+        // Example: Use Spotify SDK or API to start playback
+        SpotifyPlayer.shared.playTrack(uri: trackURI) { result in
+            switch result {
+            case .success:
+                print("Now playing: \(trackItem.track?.name)")
+            case .failure(let error):
+                print("Failed to play track: \(error)")
+            }
+        }
     }
 }
