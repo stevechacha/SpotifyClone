@@ -9,15 +9,15 @@
 import UIKit
 import SDWebImage
 
+import UIKit
+import SDWebImage
+
 class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
     // MARK: - Properties
-//    private var album: Album
     private var albumID: String
     private var tracks: [Track] = []
     
-    
-   
     // UI Components
     private let albumImageView: UIImageView = {
         let imageView = UIImageView()
@@ -27,14 +27,12 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         return imageView
     }()
     
-    // Loading Indicator
     private let loadingIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
         indicator.hidesWhenStopped = true
         return indicator
     }()
-
-    // Empty State Label
+    
     private let emptyStateLabel: UILabel = {
         let label = UILabel()
         label.text = "No tracks available"
@@ -44,7 +42,6 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         label.isHidden = true
         return label
     }()
-
     
     private let albumNameLabel: UILabel = {
         let label = UILabel()
@@ -72,7 +69,7 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
     
     private let tableView: UITableView = {
         let tableView = UITableView()
-        tableView.register(AlbumTrackTableViewCell.self, forCellReuseIdentifier: AlbumTrackTableViewCell.identifier)
+        tableView.register(AlbumDetailTableViewCell.self, forCellReuseIdentifier: AlbumDetailTableViewCell.identifier)
         return tableView
     }()
     
@@ -86,31 +83,18 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         fatalError("init(coder:) has not been implemented")
     }
     
-//    var titles : String
-
-    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        
-        
-        AlbumApiCaller.shared.getAllAlbumTracks(albumID: albumID) { result in
-            switch result {
-            case .success(let success):
-                self.title = success.first?.name
-            case .failure(let failure):
-                print(failure)
-            }
-        }
-//        title = album.name ?? "Album Details"
-        
+        self.title = "Album Details"
         setupUI()
+        fetchAlbumDetails()
         fetchTracks()
     }
     
+    // MARK: - Setup UI
     private func setupUI() {
-        // Add UI elements to the view
         view.addSubview(albumImageView)
         view.addSubview(albumNameLabel)
         view.addSubview(artistLabel)
@@ -118,10 +102,10 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         view.addSubview(tableView)
         view.addSubview(loadingIndicator)
         view.addSubview(emptyStateLabel)
-
+        
         tableView.dataSource = self
         tableView.delegate = self
-
+        
         // Enable Auto Layout
         albumImageView.translatesAutoresizingMaskIntoConstraints = false
         albumNameLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -130,103 +114,75 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         tableView.translatesAutoresizingMaskIntoConstraints = false
         loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
         emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        // Add Auto Layout constraints
+        
         NSLayoutConstraint.activate([
-            // Album Image View
             albumImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             albumImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             albumImageView.widthAnchor.constraint(equalToConstant: 150),
             albumImageView.heightAnchor.constraint(equalToConstant: 150),
-
-            // Album Name Label
+            
             albumNameLabel.topAnchor.constraint(equalTo: albumImageView.bottomAnchor, constant: 8),
             albumNameLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             albumNameLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-
-            // Artist Label
+            
             artistLabel.topAnchor.constraint(equalTo: albumNameLabel.bottomAnchor, constant: 4),
             artistLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             artistLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-
-            // Release Date Label
+            
             releaseDateLabel.topAnchor.constraint(equalTo: artistLabel.bottomAnchor, constant: 4),
             releaseDateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             releaseDateLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-
-            // TableView
+            
             tableView.topAnchor.constraint(equalTo: releaseDateLabel.bottomAnchor, constant: 16),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-
-            // Loading Indicator
+            
             loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-
-            // Empty State Label
+            
             emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
-        
-        AlbumApiCaller.shared.getAlbumDetails(albumID: albumID) { results in
-            switch results {
-            case .success(let album):
-                // Configure UI elements
-                self.albumNameLabel.text = album.name ?? "Unknown Album"
-                self.artistLabel.text = album.artists?.map { $0.name ?? "" }.joined(separator: ", ") ?? "Unknown Artist"
-                self.releaseDateLabel.text = "Released: \(album.releaseDate ?? "Unknown Date")"
-                // Load album image using SDWebImage
-                if let imageUrlString = album.images?.first?.url, let imageUrl = URL(string: imageUrlString) {
-                    self.albumImageView.sd_setImage(with: imageUrl, completed: nil)
-                }
-            case .failure(let failure):
-                print(failure)
-            }
-            
-        }
-
-//        // Configure UI elements
-//        albumNameLabel.text = album.name ?? "Unknown Album"
-//        artistLabel.text = album.artists?.map { $0.name ?? "" }.joined(separator: ", ") ?? "Unknown Artist"
-//        releaseDateLabel.text = "Released: \(album.releaseDate ?? "Unknown Date")"
-//
-//        // Load album image using SDWebImage
-//        if let imageUrlString = album.images?.first?.url, let imageUrl = URL(string: imageUrlString) {
-//            albumImageView.sd_setImage(with: imageUrl, completed: nil)
-//        }
     }
-
     
+    // MARK: - Fetch Album Details
+    private func fetchAlbumDetails() {
+        AlbumApiCaller.shared.getAlbumDetails(albumID: albumID) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch result {
+                case .success(let album):
+                    self.albumNameLabel.text = album.name ?? "Unknown Album"
+                    self.artistLabel.text = album.artists?.map { $0.name ?? "Unknown Artist" }.joined(separator: ", ") ?? "Unknown Artist"
+                    self.releaseDateLabel.text = "Released: \(album.releaseDate ?? "Unknown Date")"
+                    if let imageUrlString = album.images?.first?.url, let imageUrl = URL(string: imageUrlString) {
+                        self.albumImageView.sd_setImage(with: imageUrl, completed: nil)
+                    }
+                case .failure(let error):
+                    print("Error fetching album details: \(error)")
+                    self.albumNameLabel.text = "Failed to Load Album"
+                }
+            }
+        }
+    }
+    
+    // MARK: - Fetch Tracks
     private func fetchTracks() {
-//        guard let albumID = album.id else {
-//            print("Album ID is missing.")
-//            return
-//        }
-//        
-        // Show loading indicator and hide tableView
         loadingIndicator.startAnimating()
         tableView.isHidden = true
         emptyStateLabel.isHidden = true
-
-        // Clear old tracks before fetching new ones
-        self.tracks.removeAll()
-        self.tableView.reloadData()
         
         AlbumApiCaller.shared.getAllAlbumTracks(albumID: albumID) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-
-                // Stop loading indicator
                 self.loadingIndicator.stopAnimating()
-                
                 switch result {
-                case .success(let tracksResponse):
-                    self.tracks = tracksResponse
-                    self.tableView.isHidden = self.tracks.isEmpty
-                    self.emptyStateLabel.isHidden = !self.tracks.isEmpty
+                case .success(let tracks):
+                    self.tracks = tracks
+                    self.tableView.isHidden = tracks.isEmpty
+                    self.emptyStateLabel.isHidden = !tracks.isEmpty
                     self.tableView.reloadData()
-
                 case .failure(let error):
                     print("Failed to fetch tracks: \(error)")
                     self.tracks = []
@@ -236,7 +192,6 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
             }
         }
     }
-
     
     // MARK: - TableView DataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -244,7 +199,10 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: AlbumTrackTableViewCell.identifier, for: indexPath) as? AlbumTrackTableViewCell else {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: AlbumDetailTableViewCell.identifier,
+            for: indexPath
+        ) as? AlbumDetailTableViewCell else {
             return UITableViewCell()
         }
         

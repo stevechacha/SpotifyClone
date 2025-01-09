@@ -60,7 +60,7 @@ class NewReleaseCollectionViewCell: UICollectionViewCell {
             albumImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
             albumImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             albumImageView.widthAnchor.constraint(equalToConstant: 100),
-            albumImageView.heightAnchor.constraint(equalToConstant: 60),
+            albumImageView.heightAnchor.constraint(equalToConstant: 90),
             
             // Title label below the album image
             titleLabel.topAnchor.constraint(equalTo: albumImageView.bottomAnchor, constant: 8),
@@ -98,5 +98,9 @@ class NewReleaseCollectionViewCell: UICollectionViewCell {
     }
 
 }
+
+
+
+
 
 

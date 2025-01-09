@@ -43,10 +43,10 @@ final class UserApiCaller {
                 
                 do {
                     let userProfile = try JSONDecoder().decode(UserProfile.self, from: data)
-//                    print(userProfile)
+                    print(userProfile)
                     completion(.success(userProfile))
                 } catch {
-                    print("Decoding Error: \(error.localizedDescription)")
+                    print("Decoding Error: \(error)")
                     completion(.failure(error))
                 }
             }
@@ -95,17 +95,17 @@ final class UserApiCaller {
                     return
                 }
                 
-//                if let response = response as? HTTPURLResponse {
-//                    print(" From UserApi Response Code: \(response.statusCode)")
-//                }
+                if let response = response as? HTTPURLResponse {
+                    print(" From UserApi Response Code: \(response.statusCode)")
+                }
                 
                 
                 do {
                     let userProfile = try JSONDecoder().decode(UserProfile.self, from: data)
-//                    print(userProfile)
+                    print(userProfile)
                     completion(.success(userProfile))
                 } catch {
-//                    print("Decoding Error: \(error.localizedDescription)")
+                    print("Decoding Error: \(error.localizedDescription)")
                     completion(.failure(error))
                 }
             }
@@ -136,7 +136,7 @@ final class UserApiCaller {
     
    
     
-    func getUserTopItems(type: String, limit: Int = 20, completion: @escaping (Result<[TopItem], Error>) -> Void) {
+    func getUserTopItems(type: String, limit: Int = 1, completion: @escaping (Result<[TopItem], Error>) -> Void) {
         var items: [TopItem] = []
         var nextURL: URL? = URL(string: "\(Constants.baseApiUrl)/me/top/\(type)?limit=\(limit)")
 

@@ -44,6 +44,10 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         return segmentedControl
     }()
     
+    var fetchedAlbums: [Album] = []
+    var fetchedPlaylists: [PlaylistItem] = []
+    var fetchedPodcasts: [UsersSavedShowsItems] = []
+    var fetchedEpisodes: [UserSavedEpisode] = []
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -112,10 +116,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         showLoadingSpinner()
         
         let group = DispatchGroup()
-        var fetchedAlbums: [Album] = []
-        var fetchedPlaylists: [PlaylistItem] = []
-        var fetchedPodcasts: [UsersSavedShowsItems] = []
-        var fetchedEpisodes: [UserSavedEpisode] = []
+        
         
         // Fetch Albums
         group.enter()
@@ -123,7 +124,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
-                    fetchedAlbums = response.items.compactMap { $0.album }
+                    self?.fetchedAlbums = response.items.compactMap { $0.album }
                 case .failure(let error):
                     print("Failed to fetch albums: \(error.localizedDescription)")
                 }
@@ -137,7 +138,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
-                    fetchedPlaylists = response.items ?? []
+                    self?.fetchedPlaylists = response.items ?? []
                 case .failure(let error):
                     print("Failed to fetch playlists: \(error.localizedDescription)")
                 }
@@ -151,7 +152,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
-                    fetchedPodcasts = response.items ?? []
+                    self?.fetchedPodcasts = response.items ?? []
                 case .failure(let error):
                     print("Failed to fetch podcasts: \(error.localizedDescription)")
                 }
@@ -165,7 +166,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
             DispatchQueue.main.async {
                 switch result {
                 case .success(let response):
-                    fetchedEpisodes = response.items ?? []
+                    self?.fetchedEpisodes = response.items ?? []
                 case .failure(let error):
                     print("Failed to fetch episodes: \(error.localizedDescription)")
                 }
@@ -177,10 +178,10 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         group.notify(queue: .main) {
             self.hideLoadingSpinner()
             self.savedItems = [
-                fetchedAlbums.map { SavedItemType.album($0) },
-                fetchedPlaylists.map { SavedItemType.playlist($0) },
-                fetchedPodcasts.map { SavedItemType.podcast($0) },
-                fetchedEpisodes.map { SavedItemType.episode($0) }
+                self.fetchedAlbums.map { SavedItemType.album($0) },
+                self.fetchedPlaylists.map { SavedItemType.playlist($0) },
+                self.fetchedPodcasts.map { SavedItemType.podcast($0) },
+                self.fetchedEpisodes.map { SavedItemType.episode($0) }
             ].flatMap { $0 }
             
             self.filteredItems = self.savedItems // Default to showing all items
@@ -252,17 +253,26 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         
         switch item {
         case .album(let album):
-            let detailVC = AlbumDetailViewController(albumID: album.id ?? "")
-            navigationController?.pushViewController(detailVC, animated: true)
+            if let albumID = album.id {
+                let detailVC = AlbumDetailViewController(albumID: albumID)
+                navigationController?.pushViewController(detailVC, animated: true)
+            }
+           
         case .playlist(let playlist):
-            let playerListVC = PlayerListViewController(playlist: playlist)
-            navigationController?.pushViewController(playerListVC, animated: true)
+            if let selectedPlaylistID = playlist.id {
+                let playerListVC = PlayerListViewController(playlistID: selectedPlaylistID)
+                navigationController?.pushViewController(playerListVC, animated: true)
+            }
+           
         case .podcast(let podcast):
             let detailVC = PodcastDetailViewController(podcast: podcast)
             navigationController?.pushViewController(detailVC, animated: true)
         case .episode(let episode):
-            let episodeDetailVC = UserEpisodeDetailViewController(episode: episode)
-            navigationController?.pushViewController(episodeDetailVC, animated: true)
+            if let episodeID = episode.episode?.id {
+                let episodeDetailVC = EpisodeDetailViewController(episodeID: episodeID)
+                navigationController?.pushViewController(episodeDetailVC, animated: true)
+            }
+           
         }
     }
 }

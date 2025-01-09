@@ -104,13 +104,17 @@ class TrackDetailViewController: UIViewController {
     }
 
     private func fetchTrackDetails() {
-        // Here you would fetch the track details using the trackID
-        // For example, using a service or API call (this is just a placeholder)
-//        TrackApiCaller.shared.getTrack(trackID: trackID) { [weak self] (track) in
-//            guard let self = self, let track = track else { return }
-//            self.track = track.flatMap(<#T##(Success) -> Result<NewSuccess, Failure>#>)
-//            self.configureUI()
-//        }
+        TrackApiCaller.shared.getTrack(trackID: trackID) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let track):
+                    self?.track = track
+                    self?.configureUI()
+                case .failure(let error):
+                    self?.showErrorAlert(message: error.localizedDescription)
+                }
+            }
+        }
     }
 
     private func configureUI() {
@@ -118,7 +122,6 @@ class TrackDetailViewController: UIViewController {
 
         // Configure UI with track details
         if let albumImageUrl = URL(string: track.album?.images?.first?.url ?? "") {
-            // Load the album image (you could use a library like SDWebImage or URLSession for async loading)
             DispatchQueue.global().async {
                 if let data = try? Data(contentsOf: albumImageUrl) {
                     DispatchQueue.main.async {
@@ -133,16 +136,19 @@ class TrackDetailViewController: UIViewController {
         albumNameLabel.text = "Album: \(track.album?.name ?? "Unknown Album")"
 
         // Hide preview button if preview URL is missing
-        if track.previewUrl == nil {
-            previewButton.isHidden = true
-        }
+        previewButton.isHidden = track.previewUrl == nil
     }
 
     @objc private func previewButtonTapped() {
         guard let track = track, let previewUrlString = track.previewUrl,
               let previewUrl = URL(string: previewUrlString) else { return }
 
-        // Open the preview URL in the default browser
         UIApplication.shared.open(previewUrl, options: [:], completionHandler: nil)
+    }
+
+    private func showErrorAlert(message: String) {
+        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
     }
 }

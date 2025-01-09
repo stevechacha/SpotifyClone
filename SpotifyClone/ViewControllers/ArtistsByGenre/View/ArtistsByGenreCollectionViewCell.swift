@@ -8,8 +8,8 @@
 import UIKit
 
 
-class ArtistCell: UICollectionViewCell {
-    static let identifier = "ArtistCell"
+class ArtistsByGenreCollectionViewCell: UICollectionViewCell {
+    static let identifier = "ArtistsByGenreCollectionViewCell"
 
     
     // MARK: - UI Elements

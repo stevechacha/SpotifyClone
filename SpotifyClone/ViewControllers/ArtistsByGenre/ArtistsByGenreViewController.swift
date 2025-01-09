@@ -23,7 +23,7 @@ class ArtistsByGenreViewController: UIViewController, UITableViewDelegate, UITab
     private func setupTableView() {
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ArtistCell")
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: ArtistsByGenreCollectionViewCell.identifier)
         
         view.addSubview(tableView)
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -41,7 +41,7 @@ class ArtistsByGenreViewController: UIViewController, UITableViewDelegate, UITab
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: ArtistCell.identifier, for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: ArtistsByGenreCollectionViewCell.identifier, for: indexPath)
         let artist = artists[indexPath.row]
         cell.textLabel?.text = artist.name
         return cell
