@@ -9,20 +9,26 @@ import UIKit
 
 class ArtistViewController: UIViewController {
     
-    private let topArtist: TopItem
+    private let topArtistID: String
     private var topTracks: [Track] = []
     private var albums: [Album] = []
     private var relatedArtists: [RelatedArtist] = []
     private var headerView: UIView!
     private var segmentedControl: UISegmentedControl!
     private var tableView: UITableView!
+    private var artistName: String = "Artist" {
+           didSet {
+               self.title = artistName
+           }
+       }
+
     
     // Loading indicator
     private var activityIndicator: UIActivityIndicatorView!
 
     // MARK: - Initializer
-    init(topArtist: TopItem) {
-        self.topArtist = topArtist
+    init(topArtistID: String) {
+        self.topArtistID = topArtistID
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -61,7 +67,7 @@ class ArtistViewController: UIViewController {
         // Artist Name
         let nameLabel = UILabel()
         nameLabel.font = .boldSystemFont(ofSize: 24)
-        nameLabel.text = topArtist.name
+        nameLabel.text = "Loading..."
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
         headerView.addSubview(nameLabel)
         
@@ -92,8 +98,8 @@ class ArtistViewController: UIViewController {
             detailsLabel.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -10)
         ])
         
-        // Fetch artist details for genres and followers
-        ArtistApiCaller.shared.getArtistDetails(artistID: topArtist.id ?? "") { [weak self] result in
+        // Fetch artist details for genres, followers, and name
+        ArtistApiCaller.shared.getArtistDetails(artistID: topArtistID) { [weak self] result in
             DispatchQueue.main.async {
                 self?.stopLoadingIndicator()  // Stop loading once data is fetched
             }
@@ -101,12 +107,13 @@ class ArtistViewController: UIViewController {
             switch result {
             case .success(let details):
                 DispatchQueue.main.async {
+                    nameLabel.text = details.name // Set artist name here
                     let genres = details.genres?.joined(separator: ", ").capitalized ?? "Unknown Genres"
                     let followers = details.followers?.total ?? 0
                     detailsLabel.text = "Genres: \(genres)\nFollowers: \(followers)"
                     
                     if let imageUrl = details.images?.first?.url, let url = URL(string: imageUrl) {
-                        artistImageView.loadImage(from: url)
+                        artistImageView.sd_setImage(with: url, placeholderImage: UIImage(systemName: "person"))
                     }
                 }
             case .failure(let error):
@@ -114,6 +121,8 @@ class ArtistViewController: UIViewController {
             }
         }
     }
+
+
     
     private func setupSegmentedControl() {
         segmentedControl = UISegmentedControl(items: ["Top Tracks", "Albums", "Related Artists"])
@@ -142,7 +151,8 @@ class ArtistViewController: UIViewController {
             tableView.topAnchor.constraint(equalTo: segmentedControl.bottomAnchor, constant: 10),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+
         ])
     }
     
@@ -167,65 +177,76 @@ class ArtistViewController: UIViewController {
         }
     }
     
-    // MARK: - Fetch Data
-    private func fetchTopTracks() {
-        startLoadingIndicator() // Start loading before fetching
-        ArtistApiCaller.shared.getArtistsTopTracks(for: topArtist.id ?? "") { [weak self] result in
-            switch result {
-            case .success(let tracksResponse):
-                self?.topTracks = tracksResponse.tracks
-                DispatchQueue.main.async {
-                    self?.tableView.reloadData()
-                    self?.stopLoadingIndicator()  // Stop loading once data is fetched
+    //MARK: - Fetch Artist Details
+        private func fetchArtistDetails() {
+            ArtistApiCaller.shared.getArtistDetails(artistID: topArtistID) { [weak self] result in
+                switch result {
+                case .success(let details):
+                    DispatchQueue.main.async {
+                        self?.artistName = details.name
+                    }
+                case .failure(let error):
+                    print("Error fetching artist details: \(error)")
                 }
-            case .failure(let error):
-                print("Error fetching top tracks: \(error)")
-                self?.stopLoadingIndicator()  // Stop loading if there's an error
             }
         }
-    }
-    
-    private func fetchAlbums() {
-        startLoadingIndicator() // Start loading before fetching
-        ArtistApiCaller.shared.getArtistAlbums(artistID: topArtist.id ?? "") { [weak self] result in
-            switch result {
-            case .success(let albumsResponse):
-                self?.albums = albumsResponse.items
-                DispatchQueue.main.async {
-                    self?.tableView.reloadData()
-                    self?.stopLoadingIndicator()  // Stop loading once data is fetched
+
+        // MARK: - Fetch Data
+        private func fetchTopTracks() {
+            ArtistApiCaller.shared.getArtistsTopTracks(for: topArtistID) { [weak self] result in
+                switch result {
+                case .success(let tracksResponse):
+                    self?.topTracks = tracksResponse.tracks
+                    DispatchQueue.main.async {
+                        self?.tableView.reloadData()
+                        self?.stopLoadingIndicator()  // Stop loading once data is fetched
+
+                    }
+                case .failure(let error):
+                    print("Error fetching top tracks: \(error)")
                 }
-            case .failure(let error):
-                print("Error fetching albums: \(error)")
-                self?.stopLoadingIndicator()  // Stop loading if there's an error
             }
         }
-    }
-    
-    private func fetchRelatedArtists() {
-        startLoadingIndicator() // Start loading before fetching
-        ArtistApiCaller.shared.getRelatedArtists(artistID: topArtist.id ?? "") { [weak self] result in
-            switch result {
-            case .success(let artists):
-                self?.relatedArtists = artists.artists ?? []
-                DispatchQueue.main.async {
-                    self?.tableView.reloadData()
-                    self?.stopLoadingIndicator()  // Stop loading once data is fetched
+
+        private func fetchAlbums() {
+            ArtistApiCaller.shared.getArtistAlbums(artistID: topArtistID) { [weak self] result in
+                switch result {
+                case .success(let albumsResponse):
+                    self?.albums = albumsResponse.items
+                    DispatchQueue.main.async {
+                        self?.tableView.reloadData()
+                        self?.stopLoadingIndicator()  // Stop loading once data is fetched
+
+                    }
+                case .failure(let error):
+                    print("Error fetching albums: \(error)")
                 }
-            case .failure(let error):
-                print("Error fetching related artists: \(error)")
-                self?.stopLoadingIndicator()  // Stop loading if there's an error
             }
         }
-    }
-    
+
+        private func fetchRelatedArtists() {
+            ArtistApiCaller.shared.getRelatedArtists(artistID: topArtistID) { [weak self] result in
+                switch result {
+                case .success(let artists):
+                    self?.relatedArtists = artists.artists ?? []
+                    DispatchQueue.main.async {
+                        self?.tableView.reloadData()
+                        self?.stopLoadingIndicator()  // Stop loading once data is fetched
+
+                    }
+                case .failure(let error):
+                    print("Error fetching related artists: \(error)")
+                }
+            }
+        }
+
     // MARK: - Segmented Control Action
     @objc private func segmentChanged() {
         tableView.reloadData()
     }
 }
 
-// MARK: - UITableView Data Source & Delegate
+// MARK: - TableView Data Source & Delegate
 extension ArtistViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch segmentedControl.selectedSegmentIndex {
@@ -238,29 +259,62 @@ extension ArtistViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        
+        // Clear the cell
+        cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+        
+        // Image View
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.layer.cornerRadius = 8
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        cell.contentView.addSubview(imageView)
+        
+        // Label
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16)
+        label.numberOfLines = 2
+        label.translatesAutoresizingMaskIntoConstraints = false
+        cell.contentView.addSubview(label)
+        
+        // Stack View Layout
+        NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 10),
+            imageView.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: 50),
+            imageView.heightAnchor.constraint(equalToConstant: 50),
+            
+            label.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 10),
+            label.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -10),
+            label.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor)
+        ])
+        
         switch segmentedControl.selectedSegmentIndex {
-        case 0:
-            cell.textLabel?.text = topTracks[indexPath.row].name
-        case 1:
-            cell.textLabel?.text = albums[indexPath.row].name
-        case 2:
-            cell.textLabel?.text = relatedArtists[indexPath.row].name
+        case 0: // Top Tracks
+            label.text = topTracks[indexPath.row].name
+            if let imageUrl = topTracks[indexPath.row].album?.images?.first?.url {
+                imageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(systemName: "photo"))
+            }
+        case 1: // Albums
+            label.text = albums[indexPath.row].name
+            if let imageUrl = albums[indexPath.row].images?.first?.url {
+                imageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(systemName: "photo"))
+            }
+        case 2: // Related Artists
+            label.text = relatedArtists[indexPath.row].name
+            if let imageUrl = relatedArtists[indexPath.row].images?.first?.url {
+                imageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(systemName: "photo"))
+            }
         default:
             break
         }
+        
         return cell
     }
-}
-
-extension UIImageView {
-    // Load image from URL (you can replace this with a third-party library like SDWebImage)
-    func loadImage(from url: URL) {
-        DispatchQueue.global().async {
-            if let data = try? Data(contentsOf: url) {
-                DispatchQueue.main.async {
-                    self.image = UIImage(data: data)
-                }
-            }
-        }
+    
+    // Add space between rows by increasing row height
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 50 // Adjust this value to increase or decrease the space between rows
     }
 }

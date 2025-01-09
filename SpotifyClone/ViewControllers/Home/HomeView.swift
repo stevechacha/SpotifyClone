@@ -26,7 +26,7 @@ struct HomeView: View {
                         // User Profile Section
                         if let user = viewModel.userProfile {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Welcome, \(user.display_name)!")
+                                Text("Welcome, \(user.display_name ?? "")!")
                                     .font(.title)
                                     .bold()
                                 if let imageUrl = user.images?.first?.url {

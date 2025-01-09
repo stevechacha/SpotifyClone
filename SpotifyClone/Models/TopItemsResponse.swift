@@ -11,7 +11,7 @@ struct TopItemsResponse: Codable {
     let href: String?
     let limit: Int?
     let next: String?
-    let offset: Int
+    let offset: Int?
     let previous: String?
     let total: Int?
     let items: [TopItem]?

@@ -1,12 +1,15 @@
 //
-//  FollowedArtistAlbumCellViewModel.swift
+//  AlbumsByArtistYouFollowCellViewModel.swift
 //  SpotifyClone
 //
-//  Created by stephen chacha on 06/01/2025.
+//  Created by stephen chacha on 08/01/2025.
 //
 
 import Foundation
-struct FollowedArtistAlbumCellViewModel {
+
+
+
+struct AlbumsByArtistYouFollowCellViewModel {
     let name: String
     let artUrl: URL?
     let numberOfTracks: Int

@@ -1,5 +1,5 @@
 //
-//  HomeSearchViewController.swift
+//  SearchViewController.swift
 //  SpotifyClone
 //
 //  Created by stephen chacha on 03/01/2025.
@@ -150,8 +150,11 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
             navigationController?.pushViewController(vc, animated: true)
             
         case .track(let track):
-            let vc = TrackDetailViewController(trackID: track.id ?? "")
-            navigationController?.pushViewController(vc, animated: true)
+            if let trackID = track.id {
+                let vc = TrackDetailViewController(trackID: trackID)
+                navigationController?.pushViewController(vc, animated: true)
+            }
+           
             
         case .audiobook(let audiobook):
             let vc = AudiobookDetailViewController(audiobook: audiobook)
@@ -162,8 +165,11 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
             navigationController?.pushViewController(vc, animated: true)
             
         case .episode(let episode):
-            let vc = EpisodeDetailViewController(episode: episode)
-            navigationController?.pushViewController(vc, animated: true)
+            if let episodeID = episode.id {
+                let vc = EpisodeDetailViewController(episodeID: episodeID)
+                navigationController?.pushViewController(vc, animated: true)
+            }
+            
             
         case .chapter(let chapter):
             let vc = ChapterDetailViewController(chapter: chapter)

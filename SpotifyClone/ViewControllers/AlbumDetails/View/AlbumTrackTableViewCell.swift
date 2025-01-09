@@ -9,9 +9,9 @@
 import UIKit
 import SDWebImage
 
-class AlbumTrackTableViewCell: UITableViewCell {
+class AlbumDetailTableViewCell: UITableViewCell {
     
-    static let identifier = "AlbumTrackTableViewCell"
+    static let identifier = "AlbumDetailTableViewCell"
     
     private let trackImageView: UIImageView = {
         let imageView = UIImageView()

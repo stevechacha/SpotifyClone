@@ -1,16 +1,14 @@
 //
-//  FollowedArtistAlbumCollectionViewCell.swift
+//  AlbumsByArtistYouFollowCollectionViewCell.swift
 //  SpotifyClone
 //
-//  Created by stephen chacha on 06/01/2025.
+//  Created by stephen chacha on 08/01/2025.
 //
 
 
 import UIKit
-import SDWebImage
-
-class FollowedArtistAlbumCollectionViewCell: UICollectionViewCell {
-    static let identifier = "FollowedArtistAlbumCollectionViewCell"
+class AlbumsByArtistYouFollowCollectionViewCell: UICollectionViewCell {
+    static let identifier = "AlbumsByArtistYouFollowCollectionViewCell"
     
     private let albumImageView: UIImageView = {
         let imageView = UIImageView()
@@ -42,6 +40,7 @@ class FollowedArtistAlbumCollectionViewCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
+        
         DispatchQueue.main.async { [weak self] in
             self?.setupViews()
         }
@@ -62,7 +61,7 @@ class FollowedArtistAlbumCollectionViewCell: UICollectionViewCell {
             albumImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
             albumImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             albumImageView.widthAnchor.constraint(equalToConstant: 100),
-            albumImageView.heightAnchor.constraint(equalToConstant: 60),
+            albumImageView.heightAnchor.constraint(equalToConstant: 80),
             
             // Title label below the album image
             titleLabel.topAnchor.constraint(equalTo: albumImageView.bottomAnchor, constant: 8),
@@ -86,7 +85,7 @@ class FollowedArtistAlbumCollectionViewCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public func configure(with viewModel: FollowedArtistAlbumCellViewModel) {
+    public func configure(with viewModel: AlbumsByArtistYouFollowCellViewModel) {
         titleLabel.text = viewModel.name
         artistLabel.text = viewModel.artistName
         tracksLabel.text = viewModel.tracksText
@@ -98,5 +97,6 @@ class FollowedArtistAlbumCollectionViewCell: UICollectionViewCell {
             albumImageView.image = UIImage(named: "placeholder") // Replace with your placeholder image name
         }
     }
+
 }
 

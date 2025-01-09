@@ -146,22 +146,22 @@ class ChaptersViewController: UIViewController {
     
     
     func getChapters(){
-//        ChapterApiCaller.shared.searchSpotifyItem(query: "Technology", type: "show") { result in
-//            switch result {
-//            case .success(let ids):
-//                print("Show IDs: \(ids)")
-//                ChapterApiCaller.shared.getSeveralShow(ids: ids) { result in
-//                    switch result {
-//                    case .success(let response):
-//                        print("Fetched Shows: \(response)")
-//                    case .failure(let error):
-//                        print("Error: \(error.localizedDescription)")
-//                    }
-//                }
-//            case .failure(let error):
-//                print("Error searching for shows: \(error.localizedDescription)")
-//            }
-//        }
+        ChapterApiCaller.shared.searchSpotifyItem(query: "Technology", type: "show") { result in
+            switch result {
+            case .success(let ids):
+                print("Show IDs: \(ids)")
+                ChapterApiCaller.shared.getSeveralShows(ids: ids) { result in
+                    switch result {
+                    case .success(let response):
+                        print("Fetched Shows: \(response)")
+                    case .failure(let error):
+                        print("Error: \(error.localizedDescription)")
+                    }
+                }
+            case .failure(let error):
+                print("Error searching for shows: \(error.localizedDescription)")
+            }
+        }
         
         ChapterApiCaller.shared.getUserSavedPodCasts { result in
             switch result {
@@ -226,12 +226,5 @@ class ChaptersViewController: UIViewController {
                 print("Error searching for shows: \(error.localizedDescription)")
             }
         }
-
-
-
     }
-
-
-
-
 }

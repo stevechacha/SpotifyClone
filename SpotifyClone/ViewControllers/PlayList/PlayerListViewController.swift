@@ -9,7 +9,7 @@ import UIKit
 
 class PlayerListViewController: UIViewController {
 
-    var playlist: PlaylistItem
+    var playlistID: String
     var tracks: [PlaylistItemsResponse] = [] // To store the fetched tracks
 
     private let tableView: UITableView = {
@@ -26,8 +26,8 @@ class PlayerListViewController: UIViewController {
     }()
 
     // Initialize with a playlist
-    init(playlist: PlaylistItem) {
-        self.playlist = playlist
+    init(playlistID: String) {
+        self.playlistID = playlistID
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -37,7 +37,7 @@ class PlayerListViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = playlist.name
+        title = "playlist.name"
         view.backgroundColor = .systemBackground
         
         // Setup table view
@@ -97,7 +97,7 @@ class PlayerListViewController: UIViewController {
     
     func fetchPlaylistTracks() {
         loadingIndicator.startAnimating()
-        PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlist.id ?? "No Id") { [weak self] result in
+        PlaylistApiCaller.shared.getPlaylistTracks(playlistID: playlistID) { [weak self] result in
             DispatchQueue.main.async {
                 self?.loadingIndicator.stopAnimating()
             }
@@ -186,7 +186,7 @@ extension PlayerListViewController: UITableViewDelegate, UITableViewDataSource {
         SpotifyPlayer.shared.playTrack(uri: trackURI) { result in
             switch result {
             case .success:
-                print("Now playing: \(trackItem.track?.name)")
+                print("Now playing: \(trackItem.track?.name ?? "")")
             case .failure(let error):
                 print("Failed to play track: \(error)")
             }
