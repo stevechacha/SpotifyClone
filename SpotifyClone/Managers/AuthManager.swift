@@ -15,14 +15,11 @@ final class AuthManager {
     
     // MARK: - Constants
     struct Constants {
-//        static let clientID = "f5cf1ca073a04ccc8bd835905555cf38" // Replace with your client ID
-//        static let clientSecret = "60f4d436535c4bf7ae423c715dc0c89a" // Replace with your client secret
-        static let clientID = "76a675416313462c92babb568e064676" // Replace with your client ID
-        static let clientSecret = "25cb1fc758d14074be471a1c3cb45349" // Replace with your client secret
+        static let clientID = "CLIENT ID" // Replace with your client ID
+        static let clientSecret = "CLIENT SECRET" // Replace with your client secret
         static let tokenAPIURL = "https://accounts.spotify.com/api/token"
         static let redirectURI = "http://localhost:3000/callback" // Replace with your registered redirect URI
-        
-        static let rawScopes = [
+        static let scopes = [
             "user-follow-read",
             "user-read-private",
             "user-read-email",
@@ -33,6 +30,8 @@ final class AuthManager {
             "user-read-playback-state",
             "user-modify-playback-state",
             "user-read-currently-playing",
+            "user-read-private",
+            "user-read-email",
             "user-library-modify",
             "user-library-read",
             "playlist-read-private",
@@ -46,9 +45,7 @@ final class AuthManager {
             "user-read-playback-position",
             "user-modify-playback-state ",
             "user-read-playback-state"
-        ]
-        
-        static let scopes = Array(Set(rawScopes)).joined(separator: " ")
+        ].joined(separator: " ")
     }
 
     

@@ -23,56 +23,81 @@ enum SearchResult {
 
 
 class SearchViewController: UIViewController {
-    
+
     // MARK: - Properties
+    private let searchBarContainer = UIView() // Container for better styling of the search bar
     private let searchBar = UISearchBar()
     private let tableView = UITableView()
     private var searchResults: [SearchResult] = [] // Unified structure to hold all results
     private var isLoading = false
     private var searchWorkItem: DispatchWorkItem? // To handle delayed searches
-    
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = "Search"
         setupUI()
     }
-    
+
     // MARK: - UI Setup
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        
+
+        // Configure Search Bar Container
+        searchBarContainer.backgroundColor = .systemBackground
+        searchBarContainer.layer.shadowColor = UIColor.black.cgColor
+        searchBarContainer.layer.shadowOpacity = 0.1
+        searchBarContainer.layer.shadowOffset = CGSize(width: 0, height: 2)
+        searchBarContainer.layer.shadowRadius = 4
+        searchBarContainer.layer.cornerRadius = 8
+        view.addSubview(searchBarContainer)
+        searchBarContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            searchBarContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0),
+            searchBarContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            searchBarContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            searchBarContainer.heightAnchor.constraint(equalToConstant: 50)
+        ])
+
         // Configure Search Bar
         searchBar.placeholder = "Search albums, artists, tracks, playlists..."
         searchBar.delegate = self
-        navigationItem.titleView = searchBar
-        
+        searchBarContainer.addSubview(searchBar)
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            searchBar.topAnchor.constraint(equalTo: searchBarContainer.topAnchor),
+            searchBar.bottomAnchor.constraint(equalTo: searchBarContainer.bottomAnchor),
+            searchBar.leadingAnchor.constraint(equalTo: searchBarContainer.leadingAnchor),
+            searchBar.trailingAnchor.constraint(equalTo: searchBarContainer.trailingAnchor)
+        ])
+
         // Configure Table View
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.register(SearchResultTableViewCell.self, forCellReuseIdentifier: SearchResultTableViewCell.identifier)
         view.addSubview(tableView)
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        
+
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.topAnchor.constraint(equalTo: searchBarContainer.bottomAnchor, constant: 10),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
-        tableView.register(SearchResultTableViewCell.self, forCellReuseIdentifier: SearchResultTableViewCell.identifier)
-
     }
-    
+
     // MARK: - Search Functionality
-     func search(query: String) {
+    func search(query: String) {
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty, !isLoading else { return }
         isLoading = true
-        
+
         SearchApi.shared.performSearch(query: query) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.isLoading = false
-                
+
                 switch result {
                 case .success(let response):
                     self.processSearchResults(response)
@@ -82,11 +107,10 @@ class SearchViewController: UIViewController {
             }
         }
     }
-    
+
     private func processSearchResults(_ response: SearchResponses) {
-        // Flatten results into a unified structure
         searchResults = []
-        
+
         if let tracks = response.tracks?.items {
             searchResults.append(contentsOf: tracks.map { .track($0) })
         }
@@ -111,7 +135,7 @@ class SearchViewController: UIViewController {
         if let chapters = response.chapters?.items {
             searchResults.append(contentsOf: chapters.map { .chapter($0) })
         }
-    
+
         tableView.reloadData()
     }
 }
@@ -121,7 +145,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return searchResults.count
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let result = searchResults[indexPath.row]
         guard let cell = tableView.dequeueReusableCell(withIdentifier: SearchResultTableViewCell.identifier, for: indexPath) as? SearchResultTableViewCell else {
@@ -131,72 +155,54 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
         return cell
     }
 
-    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let result = searchResults[indexPath.row]
-        
+
         switch result {
         case .artist(let artist):
             let vc = ArtistViewController(artistID: artist.id)
             navigationController?.pushViewController(vc, animated: true)
-            
         case .album(let album):
             let vc = AlbumDetailViewController(albumID: album.id ?? "")
             navigationController?.pushViewController(vc, animated: true)
-            
         case .playlist(let playlist):
             let vc = PlaylistDetailViewController(playlistID: playlist.id ?? "")
             navigationController?.pushViewController(vc, animated: true)
-            
         case .track(let track):
             if let trackID = track.id {
                 let vc = TrackDetailViewController(trackID: trackID)
                 navigationController?.pushViewController(vc, animated: true)
             }
-           
-            
         case .audiobook(let audiobook):
             let vc = AudiobookDetailViewController(audiobook: audiobook)
             navigationController?.pushViewController(vc, animated: true)
-            
         case .show(let show):
             let vc = ShowDetailViewController(showID: show.id ?? "")
             navigationController?.pushViewController(vc, animated: true)
-            
         case .episode(let episode):
             if let episodeID = episode.id {
                 let vc = EpisodeDetailViewController(episodeID: episodeID)
                 navigationController?.pushViewController(vc, animated: true)
             }
-            
-            
         case .chapter(let chapter):
             let vc = ChapterDetailViewController(chapter: chapter)
             navigationController?.pushViewController(vc, animated: true)
         }
     }
-
 }
 
 // MARK: - UISearchBarDelegate
 extension SearchViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        // Cancel any previous search work item to avoid race conditions
         searchWorkItem?.cancel()
-        
-        // Create a new search work item
         let workItem = DispatchWorkItem { [weak self] in
-            guard let self = self else { return }
-            self.search(query: searchText)
+            self?.search(query: searchText)
         }
-        
         searchWorkItem = workItem
-        
-        // Delay search by 0.5 seconds to avoid excessive API calls
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
     }
-    
+
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         guard let query = searchBar.text else { return }
         search(query: query)

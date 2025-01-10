@@ -372,7 +372,11 @@ class HomeViewController: UIViewController {
                    case .success(let response):
                        self?.newReleases = response.albums.items
                    case .failure(let error):
-                       self?.pressSpotyfyAlertThread(title: "Fetch new releases", message: error.localizedDescription, buttuonTitle: "OK")
+                       self?.pressSpotyfyAlertThread(
+                        title: "Fetch new releases",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                       )
                    }
                }
            }
@@ -410,7 +414,11 @@ class HomeViewController: UIViewController {
                    case .success(let response):
                        self?.topArtists = response
                    case .failure(let error):
-                       self?.pressSpotyfyAlertThread(title: "Top Artist Error", message: error.localizedDescription, buttuonTitle: "OK")
+                       self?.pressSpotyfyAlertThread(
+                        title: "Top Artist Error",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                       )
                    }
                }
            }
@@ -429,7 +437,11 @@ class HomeViewController: UIViewController {
                    case .success(let response):
                        self?.topTracks = response
                    case .failure(let error):
-                       self?.pressSpotyfyAlertThread(title: "Top User Tracks Error", message: error.localizedDescription, buttuonTitle: "OK")
+                       self?.pressSpotyfyAlertThread(
+                        title: "Top User Tracks Error",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                       )
                    }
                }
            }
@@ -621,9 +633,9 @@ class HomeViewController: UIViewController {
             // Fetch additional data from API
             TrackApiCaller.shared.getTrack(trackID: trackID) { [weak self] result in
                 switch result {
-                case .success(let success):
+                case .success(let response):
                     // Assuming `success` contains the image URL
-                    if let newImageUrlString = success.album?.images?.first?.url, let newImageUrl = URL(string: newImageUrlString) {
+                    if let newImageUrlString = response.album?.images?.first?.url, let newImageUrl = URL(string: newImageUrlString) {
                         viewModel.artUrl = newImageUrl
                         
                         // Reload the UI for the specific track

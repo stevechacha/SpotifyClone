@@ -27,6 +27,7 @@ struct SpotifyArtistsDetailResponse: Codable {
     let popularity: Int
     let type: String         // Changed from 'Artist?' to 'String'
     let uri: String
+    let bio: String? // New field for description
 
     enum CodingKeys: String, CodingKey {
         case externalUrls = "external_urls"
@@ -39,6 +40,7 @@ struct SpotifyArtistsDetailResponse: Codable {
         case popularity
         case type
         case uri
+        case bio
     }
 }
 
