@@ -266,4 +266,94 @@ class SpotifyPlayer {
             task.resume()
         }
     }
+    
+    func fetchCategories(completion: @escaping ([SpotifyCategory]) -> Void) {
+        guard let url = URL(string: "https://api.spotify.com/v1/browse/categories") else { return }
+
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                guard let data = data, error == nil else { return }
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data, options: [])
+                    if let dict = json as? [String: Any],
+                       let categoriesDict = dict["categories"] as? [String: Any],
+                       let items = categoriesDict["items"] as? [[String: Any]] {
+                        let categories: [SpotifyCategory] = items.compactMap { item in
+                            guard let id = item["id"] as? String,
+                                  let name = item["name"] as? String,
+                                  let icons = item["icons"] as? [[String: Any]],
+                                  let iconURL = icons.first?["url"] as? String else { return nil }
+                            return SpotifyCategory(id: id, name: name, imageURL: iconURL)
+                        }
+                        completion(categories)
+                    }
+                } catch {
+                    print(error.localizedDescription)
+                }
+            }.resume()
+    
+        }
+    }
+    
+    func fetchCategoryDetails(categoryID: String, completion: @escaping ([SpotifyCategory]) -> Void) {
+        let urlString = "https://api.spotify.com/v1/browse/categories/\(categoryID)"
+        guard let url = URL(string: urlString) else { return }
+        
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                guard let data = data, error == nil else { return }
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data, options: [])
+                    if let dict = json as? [String: Any],
+                       let playlists = dict["playlists"] as? [String: Any],
+                       let items = playlists["items"] as? [[String: Any]] {
+                        let result: [SpotifyCategory] = items.compactMap { item in
+                            guard let name = item["name"] as? String,
+                                  let images = item["images"] as? [[String: Any]],
+                                  let imageURL = images.first?["url"] as? String,
+                                  let playlistID = item["id"] as? String else { return nil }
+                            return SpotifyCategory(id: playlistID, name: name, imageURL: imageURL)
+                        }
+                        completion(result)
+                    }
+                } catch {
+                    print(error.localizedDescription)
+                }
+            }.resume()
+        }
+    }
+    
+    func getCategoryDetails(for categoryId: String, completion: @escaping (Result<CategoryDetails, Error>) -> Void) {
+        guard let url = URL(string: "https://api.spotify.com/v1/browse/categories/\(categoryId)") else {
+            completion(.failure(ApiError.invalidURL))
+            return
+        }
+
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let data = data else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                
+                do {
+                    let details = try JSONDecoder().decode(CategoryDetails.self, from: data)
+                    completion(.success(details))
+                } catch {
+                    completion(.failure(error))
+                }
+            }.resume()
+        }
+    }
+
+
 }
+
+

@@ -138,7 +138,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
         
         switch result {
         case .artist(let artist):
-            let vc = ArtistDetailViewController(artistID: artist.id)
+            let vc = ArtistViewController(artistID: artist.id)
             navigationController?.pushViewController(vc, animated: true)
             
         case .album(let album):

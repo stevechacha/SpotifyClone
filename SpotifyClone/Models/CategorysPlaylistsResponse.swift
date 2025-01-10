@@ -6,15 +6,50 @@
 //
 
 import Foundation
-// Get Category's Playlists
-//curl --request GET \
-//  --url https://api.spotify.com/v1/browse/categories/dinner/playlists \
-//  --header 'Authorization: Bearer 1POdFZRZbvb...qqillRxMr2z'
-
-// @GET(https://api.spotify.com/v1/browse/categories/{category_id}/playlists
 
 // MARK: - PopularPlaylistsResponse
 struct CategorysPlaylistsResponse: Codable {
     let message: String
     let playlists: Playlists
 }
+
+// MARK: - SpotifyShows
+struct SpotifyBrowseCategories: Codable {
+    let href: String
+    let limit: Int
+    let next: String?
+    let offset: Int
+    let previous: String?
+    let total: Int
+    let items: [SingleBrowseCategory]
+}
+
+// MARK: - ShowItem
+struct SingleBrowseCategory: Codable {
+    let href: String?
+    let icons: [APIImage]?
+    let id: String
+    let name: String?
+}
+
+
+struct SpotifyCategory {
+    let id: String
+    let name: String
+    let imageURL: String
+}
+
+
+struct CategoryDetails: Decodable {
+  let href: String?
+  let items: [PlaylistItem]?
+}
+
+
+
+
+
+
+
+
+

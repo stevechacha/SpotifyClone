@@ -27,8 +27,8 @@ class ArtistViewController: UIViewController {
     private var activityIndicator: UIActivityIndicatorView!
 
     // MARK: - Initializer
-    init(topArtistID: String) {
-        self.topArtistID = topArtistID
+    init(artistID: String) {
+        self.topArtistID = artistID
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -55,6 +55,8 @@ class ArtistViewController: UIViewController {
         headerView = UIView()
         headerView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(headerView)
+        
+        title = "Artist Details"
         
         // Artist Image
         let artistImageView = UIImageView()
@@ -108,6 +110,7 @@ class ArtistViewController: UIViewController {
             case .success(let details):
                 DispatchQueue.main.async {
                     nameLabel.text = details.name // Set artist name here
+
                     let genres = details.genres?.joined(separator: ", ").capitalized ?? "Unknown Genres"
                     let followers = details.followers?.total ?? 0
                     detailsLabel.text = "Genres: \(genres)\nFollowers: \(followers)"
@@ -184,6 +187,7 @@ class ArtistViewController: UIViewController {
                 case .success(let details):
                     DispatchQueue.main.async {
                         self?.artistName = details.name
+                        self?.title = details.name // Set the title to the artist's name
                     }
                 case .failure(let error):
                     print("Error fetching artist details: \(error)")
