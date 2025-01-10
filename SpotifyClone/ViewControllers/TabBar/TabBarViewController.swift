@@ -13,7 +13,7 @@ class TabBarViewController: UITabBarController {
         super.viewDidLoad()
         
         let homeController = HomeViewController()
-        let searchController = GenreGridViewController()
+        let searchController = CategoriesViewController()
         let libraryController = LibraryViewController()
         let profileController = ProfileViewController()
         

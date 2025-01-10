@@ -842,7 +842,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
         case .topArtists:
             let selectedArtist = topArtists[indexPath.row]
             if let selectedArtistID = selectedArtist.id {
-                let topArtistVc = ArtistViewController(topArtistID: selectedArtistID)
+                let topArtistVc = ArtistViewController(artistID: selectedArtistID)
                 topArtistVc.title = selectedArtist.name
                 navigationController?.pushViewController(topArtistVc, animated: true)
             }
@@ -863,7 +863,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             
         case .yourFavouriteArtist:
             let selectedYourFavouriteArtist = yourFavouriteArtist[indexPath.row]
-            let detailVC = ArtistDetailViewController(artistID: selectedYourFavouriteArtist.id)
+            let detailVC = ArtistViewController(artistID: selectedYourFavouriteArtist.id)
             navigationController?.pushViewController(detailVC, animated: true)
             
             
@@ -901,7 +901,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
                 case "artist":
                     // Navigate to artist detail view
                     if let artistUri = selectedItem.context?.uri {
-                        let artistDetailVC = ArtistDetailViewController(artistID: artistUri)
+                        let artistDetailVC = ArtistViewController(artistID: artistUri)
                         navigationController?.pushViewController(artistDetailVC, animated: true)
                     }
                     
@@ -945,7 +945,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
     }
     
     private func navigateToArtistDetail(with artistID: String){
-        let artistDetailVC = ArtistDetailViewController(artistID: artistID)
+        let artistDetailVC = ArtistViewController(artistID: artistID)
         navigationController?.pushViewController(artistDetailVC, animated: true)
     }
 
