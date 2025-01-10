@@ -29,14 +29,6 @@ struct PaginatedResponse<T: Codable>: Codable {
     let items: [T]
 }
 
-//struct SearchResponse: Codable {
-//    let albums: AlbumsSearchResultsResponse
-//    let shows: ShowSearchResults?
-//    let episodes: EpisodeSearchResults?
-//    let chapters: ChapterSearchResults?
-//    let tracks: Tracks
-//
-//}
 
 struct AlbumsSearchResultsResponse: Codable {
     let items: [Album]

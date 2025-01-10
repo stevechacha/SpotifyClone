@@ -9,14 +9,14 @@ import UIKit
 
 import UIKit
 
-class CategoriesViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UISearchBarDelegate {
+class CategoriesViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource {
     private var categories = [SpotifyCategory]()
     private var collectionView: UICollectionView!
     private var searchBar: UISearchBar!
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Categories"
+        title = "Search"
         view.backgroundColor = .systemBackground
 
         // Setup Search Bar
@@ -50,6 +50,23 @@ class CategoriesViewController: UIViewController, UICollectionViewDataSource, UI
             }
         }
     }
+    
+    private func setupSearchBar() {
+        searchBar = UISearchBar()
+        searchBar.placeholder = "What do you want to listen to?"
+        searchBar.delegate = self
+        searchBar.searchBarStyle = .minimal
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        
+        view.addSubview(searchBar)
+        
+        NSLayoutConstraint.activate([
+            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
+            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
+            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
+            searchBar.heightAnchor.constraint(equalToConstant: 50) // Ensure the height is defined
+        ])
+    }
 
     // MARK: - UISearchBarDelegate
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
@@ -64,6 +81,8 @@ class CategoriesViewController: UIViewController, UICollectionViewDataSource, UI
         navigationController?.pushViewController(searchVC, animated: true)
         searchBar.resignFirstResponder() // Dismiss keyboard
     }
+    
+    
 
     // MARK: - UICollectionViewDataSource
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -83,3 +102,15 @@ class CategoriesViewController: UIViewController, UICollectionViewDataSource, UI
         navigationController?.pushViewController(detailsVC, animated: true)
     }
 }
+
+extension CategoriesViewController: UISearchBarDelegate {
+    func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
+        // Navigate to HomeSearchViewController
+        let homeSearchVC = SearchViewController()
+        navigationController?.pushViewController(homeSearchVC, animated: true)
+        return false // Prevents the keyboard from appearing
+    }
+}
+
+
+
