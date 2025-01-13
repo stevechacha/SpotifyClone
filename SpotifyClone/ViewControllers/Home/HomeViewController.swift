@@ -64,7 +64,6 @@ class HomeViewController: UIViewController {
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
 
-        
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -95,15 +94,15 @@ class HomeViewController: UIViewController {
         collectionView.backgroundColor = .systemBackground
     }
     // MARK: - API Calls
-       private func fetchData() {
-           activityIndicator.startAnimating()
-           collectionView.isHidden = true
-           
-           let group = DispatchGroup()
-           
-           let semaphore = DispatchSemaphore(value: 5) // Limit to 5 concurrent API calls
-           
-           let apiCalls: [() -> Void] = [
+    private func fetchData() {
+        activityIndicator.startAnimating()
+        collectionView.isHidden = true
+        
+        let group = DispatchGroup()
+        
+        let semaphore = DispatchSemaphore(value: 5) // Limit to 5 concurrent API calls
+        
+        let apiCalls: [() -> Void] = [
             { self.fetchFollowedArtists(group: group, semaphore: semaphore) },
             { self.fetchRecentlyPlayed(group: group, semaphore: semaphore) },
             { self.fetchPlaylists(group: group, semaphore: semaphore) },
@@ -111,20 +110,20 @@ class HomeViewController: UIViewController {
             { self.fetchSavedAlbums(group: group, semaphore: semaphore) },
             { self.fetchTopArtists(group: group, semaphore: semaphore) },
             { self.fetchTopTracks(group: group, semaphore: semaphore) }
-           ]
-           
-           for call in apiCalls {
-               call() // Execute each API call
-           }
-           
-           
-           group.notify(queue: .main) {
-               self.activityIndicator.stopAnimating()
-               self.collectionView.isHidden = false
-               self.configureModels()
-               self.filterSections(for: 0)
-           }
-       }
+        ]
+        
+        for call in apiCalls {
+            call() // Execute each API call
+        }
+        
+        
+        group.notify(queue: .main) {
+            self.activityIndicator.stopAnimating()
+            self.collectionView.isHidden = false
+            self.configureModels()
+            self.filterSections(for: 0)
+        }
+    }
     
 //    private func fetchData() {
 //        activityIndicator.startAnimating()
@@ -837,7 +836,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
         case .playlists:
             let selectedPlaylist = playlists[indexPath.row]
             if let selectedPlaylistID = selectedPlaylist.id {
-                let playerListVC = PlayerListViewController(playlistID: selectedPlaylistID)
+                let playerListVC = PlayListViewController(playlistID: selectedPlaylistID)
                 playerListVC.title = selectedPlaylist.name
                 navigationController?.pushViewController(playerListVC, animated: true)
             }
@@ -905,7 +904,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
                 case "playlist":
                     // Navigate to playlist detail view
                     if let playlistUri = selectedItem.context?.uri {
-                        let playlistDetailVC = PlayerListViewController(playlistID: playlistUri)
+                        let playlistDetailVC = PlayListViewController(playlistID: playlistUri)
                         navigationController?.pushViewController(playlistDetailVC, animated: true)
                     }
                     
@@ -942,7 +941,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
     }
 
     private func navigateToPlaylistDetail(with playlistID: String) {
-        let playlistDetailVC = PlaylistDetailViewController(playlistID: playlistID)
+        let playlistDetailVC = PlayListViewController(playlistID: playlistID)
         navigationController?.pushViewController(playlistDetailVC, animated: true)
     }
 

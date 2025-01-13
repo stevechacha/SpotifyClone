@@ -167,7 +167,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
             let vc = AlbumDetailViewController(albumID: album.id ?? "")
             navigationController?.pushViewController(vc, animated: true)
         case .playlist(let playlist):
-            let vc = PlaylistDetailViewController(playlistID: playlist.id ?? "")
+            let vc = PlayListViewController(playlistID: playlist.id ?? "")
             navigationController?.pushViewController(vc, animated: true)
         case .track(let track):
             if let trackID = track.id {

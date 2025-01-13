@@ -99,27 +99,20 @@ final class AlbumApiCaller {
 
         createAndExecuteRequest(with: url, type: .GET, decodingType: SpotifyUsersAlbumSavedResponse.self, completion: completion)
     }
+    
+
 
     // MARK: - Save Albums for Current User
-    func saveAlbumsForCurrentUser(albumIDs: [String], completion: @escaping (Result<Bool, ApiError>) -> Void) {
-        guard let url = URL(string: Constants.savedAlbumsEndpoint) else {
+    func saveAlbumsForCurrentUser(albumIDs: String, completion: @escaping (Result<Bool, ApiError>) -> Void) {
+        guard let url = URL(string: Constants.savedAlbumsEndpoint + "?ids=\(albumIDs)") else {
             completion(.failure(.invalidURL))
             return
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["ids": albumIDs]
-
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: .fragmentsAllowed)
-        } catch {
-            completion(.failure(.encodingError("Failed to encode the request body.")))
-            return
-        }
-
-        AuthManager.shared.createRequest(with: url, type: .PUT) { request in
+        AuthManager.shared.createRequest(with: url, type: .PUT) { baseRequest in
+            var request = baseRequest
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
             let task = URLSession.shared.dataTask(with: request) { _, response, error in
                 if let error = error {
                     completion(.failure(.apiError(error.localizedDescription)))
@@ -130,33 +123,27 @@ final class AlbumApiCaller {
                     completion(.failure(.invalidResponse(statusCode: 400)))
                     return
                 }
-
-                completion(.success(true))
+                if httpResponse.statusCode == 200 {
+                    completion(.success(true))
+                } else {
+                    completion(.failure(.invalidResponse(statusCode: httpResponse.statusCode)))
+                }
+              
             }
             task.resume()
         }
     }
 
     // MARK: - Remove Saved Albums for Current User
-    func removeSavedAlbums(albumIDs: [String], completion: @escaping (Result<Bool, ApiError>) -> Void) {
-        guard let url = URL(string: Constants.savedAlbumsEndpoint) else {
+    func removeSavedAlbums(albumIDs: String, completion: @escaping (Result<Bool, ApiError>) -> Void) {
+        guard let url = URL(string: Constants.savedAlbumsEndpoint + "?ids=\(albumIDs)") else {
             completion(.failure(.invalidURL))
             return
         }
+        AuthManager.shared.createRequest(with: url, type: .DELETE) { baseRequest in
+            var request = baseRequest
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["ids": albumIDs]
-
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: .fragmentsAllowed)
-        } catch {
-            completion(.failure(.encodingError("")))
-            return
-        }
-
-        AuthManager.shared.createRequest(with: url, type: .DELETE) { request in
             let task = URLSession.shared.dataTask(with: request) { _, response, error in
                 if let error = error {
                     completion(.failure(.apiError(error.localizedDescription)))
@@ -168,8 +155,13 @@ final class AlbumApiCaller {
                     completion(.failure(.invalidResponse(statusCode: 400)))
                     return
                 }
+                
+                if httpResponse.statusCode == 200 {
+                    completion(.success(true))
+                } else {
+                    completion(.failure(.invalidResponse(statusCode: httpResponse.statusCode)))
+                }
 
-                completion(.success(true))
             }
             task.resume()
         }
@@ -221,10 +213,6 @@ final class AlbumApiCaller {
             }
         
     }
-    
-
-   
-    
     
     
     // Helper function to get the top-most view controller

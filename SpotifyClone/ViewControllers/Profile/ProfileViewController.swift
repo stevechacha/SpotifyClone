@@ -174,7 +174,6 @@ class ProfileViewController: UIViewController {
     }
     
     // MARK: - UI Updates
-    
     private func updateUI(with profile: UserProfile) {
         nameLabel.text = profile.display_name
         emailLabel.text = profile.country
@@ -203,6 +202,45 @@ class ProfileViewController: UIViewController {
         let alert = UIAlertController(title: "Error", message: error.localizedDescription, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
+    }
+    
+    private func signOutTapped(){
+        let alert = UIAlertController(title: "Sign Out", message: "Are you sure?", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        alert.addAction(UIAlertAction(title: "SignOut", style: .destructive, handler: { _ in
+            AuthManager.shared.signOut{ [weak self] signOut in
+                if signOut {
+                    DispatchQueue.main.async {
+                        self?.navigationController?.popToRootViewController(animated: true)
+                        let navController = UINavigationController(rootViewController: WelcomeViewController())
+                        navController.navigationBar.prefersLargeTitles = true
+                        navController.viewControllers.first?.navigationItem.largeTitleDisplayMode = .always
+                        navController.modalPresentationStyle = .fullScreen
+                        self?.present(navController, animated: true,completion: {
+                            self?.navigationController?.popViewController(animated: false)
+                        })
+                    }
+                }
+            }
+        }))
+        present(alert, animated: true)
+    }
+    
+    private func signOut(){
+        AuthManager.shared.signOut{ [weak self] signOut in
+            if signOut {
+                DispatchQueue.main.async {
+                    self?.navigationController?.popToRootViewController(animated: true)
+                    let navController = UINavigationController(rootViewController: WelcomeViewController())
+                    navController.navigationBar.prefersLargeTitles = true
+                    navController.viewControllers.first?.navigationItem.largeTitleDisplayMode = .always
+                    navController.modalPresentationStyle = .fullScreen
+                    self?.present(navController, animated: true,completion: {
+                        self?.navigationController?.popViewController(animated: false)
+                    })
+                }
+            }
+        }
     }
 }
 
