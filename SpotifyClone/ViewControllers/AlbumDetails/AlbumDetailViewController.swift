@@ -9,14 +9,13 @@
 import UIKit
 import SDWebImage
 
-import UIKit
-import SDWebImage
 
 class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
     // MARK: - Properties
     private var albumID: String
     private var tracks: [Track] = []
+//    private let album: [Album] = []
     
     // UI Components
     private let albumImageView: UIImageView = {
@@ -87,7 +86,7 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
-        self.title = "Album Details"
+        self.title = "Loading...."
         setupUI()
         fetchAlbumDetails()
         fetchTracks()
@@ -105,6 +104,11 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
         
         tableView.dataSource = self
         tableView.delegate = self
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .action,
+            target: self,
+            action: #selector(didTapAction))
+        
         
         // Enable Auto Layout
         albumImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -154,6 +158,7 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
                 switch result {
                 case .success(let album):
                     self.albumNameLabel.text = album.name ?? "Unknown Album"
+                    self.title = album.name
                     self.artistLabel.text = album.artists?.map { $0.name ?? "Unknown Artist" }.joined(separator: ", ") ?? "Unknown Artist"
                     self.releaseDateLabel.text = "Released: \(album.releaseDate ?? "Unknown Date")"
                     if let imageUrlString = album.images?.first?.url, let imageUrl = URL(string: imageUrlString) {
@@ -192,6 +197,85 @@ class AlbumDetailViewController: UIViewController, UITableViewDataSource, UITabl
             }
         }
     }
+    
+    @objc func didTapAction() {
+        guard let albumName = albumNameLabel.text, !albumName.isEmpty else {
+            print("Album name is not available")
+            return
+        }
+        let actionSheet = UIAlertController(title: "albumName", message: "Select an action", preferredStyle: .actionSheet)
+        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        
+        // Save Album
+        actionSheet.addAction(UIAlertAction(title: "Save Album", style: .default, handler: { [weak self] _ in
+            guard let strongSelf = self else { return }
+            strongSelf.saveAlbum()
+        }))
+        
+        // Remove Album
+        actionSheet.addAction(UIAlertAction(title: "Remove Album", style: .destructive, handler: { [weak self] _ in
+            guard let strongSelf = self else { return }
+            strongSelf.removeAlbum()
+        }))
+        
+        // Present the action sheet
+        present(actionSheet, animated: true, completion: nil)
+    }
+
+    // Save album
+    private func saveAlbum() {
+        AlbumApiCaller.shared.saveAlbumsForCurrentUser(albumIDs: albumID) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    let alert = UIAlertController(
+                        title: "Success",
+                        message: "Album has been saved to your library.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                case .failure(let error):
+                    print("Failed to save album: \(error)")
+                    let alert = UIAlertController(
+                        title: "Error",
+                        message: "Failed to save album. Please try again later.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                }
+            }
+        }
+    }
+
+    // Remove album
+    private func removeAlbum() {
+        AlbumApiCaller.shared.removeSavedAlbums(albumIDs: albumID) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    let alert = UIAlertController(
+                        title: "Success",
+                        message: "Album has been removed from your library.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                case .failure(let error):
+                    print("Failed to remove album: \(error)")
+                    let alert = UIAlertController(
+                        title: "Error",
+                        message: "Failed to remove album. Please try again later.",
+                        preferredStyle: .alert
+                    )
+                    alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                    self.present(alert, animated: true, completion: nil)
+                }
+            }
+        }
+    }
+
     
     // MARK: - TableView DataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

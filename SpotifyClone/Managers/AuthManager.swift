@@ -14,12 +14,14 @@ final class AuthManager {
    
     
     // MARK: - Constants
+    
     struct Constants {
-        static let clientID = "CLIENT ID" // Replace with your client ID
-        static let clientSecret = "CLIENT SECRET" // Replace with your client secret
+        static let clientID = "f5cf1ca073a04ccc8bd835905555cf38" // Replace with your client ID
+        static let clientSecret = "60f4d436535c4bf7ae423c715dc0c89a" // Replace with your client secret
         static let tokenAPIURL = "https://accounts.spotify.com/api/token"
         static let redirectURI = "http://localhost:3000/callback" // Replace with your registered redirect URI
-        static let scopes = [
+        
+        static let rawScopes = [
             "user-follow-read",
             "user-read-private",
             "user-read-email",
@@ -30,8 +32,6 @@ final class AuthManager {
             "user-read-playback-state",
             "user-modify-playback-state",
             "user-read-currently-playing",
-            "user-read-private",
-            "user-read-email",
             "user-library-modify",
             "user-library-read",
             "playlist-read-private",
@@ -45,7 +45,9 @@ final class AuthManager {
             "user-read-playback-position",
             "user-modify-playback-state ",
             "user-read-playback-state"
-        ].joined(separator: " ")
+        ]
+        
+        static let scopes = Array(Set(rawScopes)).joined(separator: " ")
     }
 
     
@@ -218,24 +220,13 @@ final class AuthManager {
         UserDefaults.standard.setValue(expirationDate, forKey: "expiration_date")
     }
     
-    public func getCurrentUserProfile(completion: @escaping (Result<UserProfile, Error>) -> Void) {
-        AuthManager.shared.createRequest(with: URL(string: "https://api.spotify.com/v1/me"), type: .GET) { request in
-            let task = URLSession.shared.dataTask(with: request) { data, _, error in
-                guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
-                    return
-                }
-                
-                do {
-                    let userProfile = try JSONDecoder().decode(UserProfile.self, from: data)
-                    completion(.success(userProfile))
-                } catch {
-                    print("Error decoding user profile: \(error)")
-                    completion(.failure(error))
-                }
-            }
-            task.resume()
-        }
+    // MARK: - Cache Tokens
+    public func signOut(completion: (Bool)->Void ) {
+        UserDefaults.standard.setValue(nil, forKey: "access_token")
+        UserDefaults.standard.setValue(nil, forKey: "refresh_token")
+        UserDefaults.standard.setValue(nil, forKey: "expiration_date")
+        
+        completion(true)
     }
     
     
@@ -301,8 +292,6 @@ final class AuthManager {
 //                if let jsonString = String(data: data, encoding: .utf8) {
 //                    print("From AuthManagerapi Raw Response Data: \(jsonString)")
 //                }
-                
-                // Attempt to decode the response
                 do {
                     let decoder = JSONDecoder()
                     let decodedResponse = try decoder.decode(responseType, from: data)

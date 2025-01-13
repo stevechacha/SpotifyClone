@@ -7,7 +7,6 @@
 
 import UIKit
 
-import UIKit
 
 enum SavedItemType {
     case album(Album)
@@ -55,6 +54,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         view.backgroundColor = .systemBackground
         setupUI()
         fetchSavedItems()
+        
     }
     
     // MARK: - Setup UI
@@ -79,8 +79,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor), // Use safeAreaLayoutGuide
 
-            
-
+    
             
             // Loading Spinner Constraints
             loadingSpinner.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -90,6 +89,11 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         segmentedControl.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
         tableView.delegate = self
         tableView.dataSource = self
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .add,
+            target: self,
+            action: #selector(didTapAction))
     }
 
     
@@ -104,13 +108,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         isLoading = false
     }
     
-    // MARK: - Error Handling
-    private func showError(message: String) {
-        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
-    }
-    
+
     // MARK: - Data Fetching
     private func fetchSavedItems() {
         showLoadingSpinner()
@@ -211,6 +209,50 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         tableView.reloadData()
     }
     
+    @objc func didTapAction() {
+        let customActionSheet = CustomActionSheetViewController()
+        customActionSheet.modalPresentationStyle = .overFullScreen
+
+        // Set the action handler with a completion handler
+        customActionSheet.actionHandler = { [weak self] action in
+            // Dismiss the action sheet first
+            self?.dismiss(animated: true, completion: {
+                // After dismissing, handle the action
+                self?.handleActionSelection(action: action)
+            })
+        }
+
+        // Present the custom action sheet
+        present(customActionSheet, animated: true, completion: nil)
+    }
+    
+    private func handleActionSelection(action: String) {
+        switch action {
+        case "Create Playlist":
+            // Navigate to Create Playlist screen
+            let createPlaylistVC = CreatePlaylistViewController()  // Assuming this is the view controller to create playlists
+            createPlaylistVC.modalPresentationStyle = .fullScreen // Adjust the presentation style as needed
+            present(createPlaylistVC, animated: true, completion: nil)
+        case "Blend":
+            // Handle Blend action (not implemented here)
+            print("Navigate to Blend View Controller")
+        default:
+            break
+        }
+    }
+
+
+
+
+
+    private func showError(message: String) {
+        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
+    }
+
+
+    
     // MARK: - TableView DataSource
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return filteredItems.count
@@ -260,7 +302,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
            
         case .playlist(let playlist):
             if let selectedPlaylistID = playlist.id {
-                let playerListVC = PlayerListViewController(playlistID: selectedPlaylistID)
+                let playerListVC = PlayListViewController(playlistID: selectedPlaylistID)
                 navigationController?.pushViewController(playerListVC, animated: true)
             }
            
@@ -276,4 +318,5 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         }
     }
 }
+
 

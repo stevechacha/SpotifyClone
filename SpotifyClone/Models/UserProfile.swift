@@ -36,9 +36,13 @@ enum ApiError: LocalizedError {
     case decodingError(String) // Correctly named to handle decoding errors
     case unknownError(String) // Handles unexpected errors with a message
     case rateLimitExceeded
+    case jsonSerializationFailed
+    case jsonParsingFailed
 
     var errorDescription: String? {
         switch self {
+        case .jsonParsingFailed : return "Faild Json Parsing"
+        case .jsonSerializationFailed : return "Json Failed"
         case .rateLimitExceeded: return "Exceded limit"
         case .code:
             return "API code error."
