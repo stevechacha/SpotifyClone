@@ -1,7 +1,5 @@
 # SpotifyClone
 
-# Spotify Clone App
-
 This is a **Spotify Clone App** built using **Swift** and **UIKit**, designed to replicate the core features and functionality of the Spotify music streaming platform. This project demonstrates a clean architecture, modular design, and integration with modern iOS development practices.
 
 ## Features
@@ -68,7 +66,11 @@ This is a **Spotify Clone App** built using **Swift** and **UIKit**, designed to
    - Create a developer account at [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
    - Create a new app and retrieve your **Client ID** and **Client Secret**.
    - Add your redirect URI in the Spotify app settings (e.g., `spotify-clone://callback`).
-   - Update the app configuration with your credentials.
+   - Update the app configuration with your credentials:
+     ```swift
+     static let clientID = "YOUR_CLIENT_ID" // Replace with your client ID
+     static let clientSecret = "YOUR_CLIENT_SECRET" // Replace with your client secret
+     ```
 
 4. Open the project in Xcode:
 
@@ -112,4 +114,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - [UIKit Documentation](https://developer.apple.com/documentation/uikit/)
 
 ---
+
 
