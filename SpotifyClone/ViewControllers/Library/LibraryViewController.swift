@@ -21,6 +21,12 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
     private var savedItems: [SavedItemType] = [] // Store all saved items
     private var filteredItems: [SavedItemType] = [] // Store filtered items
     private var isLoading = false // Track loading state
+    var fetchedAlbums: [Album] = []
+    var fetchedPlaylists: [PlaylistItem] = []
+    var fetchedPodcasts: [UsersSavedShowsItems] = []
+    var fetchedEpisodes: [UserSavedEpisode] = []
+    
+    public var selectionHandler: ((PlaylistItem)->Void)?
     
     private let tableView: UITableView = {
         let tableView = UITableView()
@@ -43,10 +49,7 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         return segmentedControl
     }()
     
-    var fetchedAlbums: [Album] = []
-    var fetchedPlaylists: [PlaylistItem] = []
-    var fetchedPodcasts: [UsersSavedShowsItems] = []
-    var fetchedEpisodes: [UserSavedEpisode] = []
+   
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,6 +58,14 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
         setupUI()
         fetchSavedItems()
         
+        if selectionHandler != nil {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .close, target: self, action: #selector(didTapClose))
+        }
+        
+    }
+    
+    @objc func didTapClose(){
+        dismiss(animated: true,completion: nil)
     }
     
     // MARK: - Setup UI
@@ -301,6 +312,11 @@ class LibraryViewController: UIViewController, UITableViewDelegate, UITableViewD
             }
            
         case .playlist(let playlist):
+            guard selectionHandler == nil else {
+                selectionHandler?(playlist)
+                dismiss(animated: true,completion: nil)
+                return
+            }
             if let selectedPlaylistID = playlist.id {
                 let playerListVC = PlayListViewController(playlistID: selectedPlaylistID)
                 navigationController?.pushViewController(playerListVC, animated: true)

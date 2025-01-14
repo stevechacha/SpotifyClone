@@ -72,3 +72,51 @@ struct Track: Codable {
     
 }
 
+//struct Track: Codable {
+//    let album: Album
+//    let artists: [Artist]
+//    let availableMarkets: [String]
+//    let discNumber: Int
+//    let durationMs: Int
+//    let explicit: Bool
+//    let externalIds: ExternalIds
+//    let externalUrls: ExternalUrls
+//    let href: String
+//    let id: String
+//    let isPlayable: Bool
+//    let linkedFrom: [String: String]?
+//    let restrictions: Restrictions?
+//    let name: String
+//    let popularity: Int
+//    let previewURL: String?
+//    let trackNumber: Int
+//    let type: String
+//    let uri: String
+//    let isLocal: Bool
+//
+//    enum CodingKeys: String, CodingKey {
+//        case album
+//        case artists
+//        case availableMarkets = "available_markets"
+//        case discNumber = "disc_number"
+//        case durationMs = "duration_ms"
+//        case explicit
+//        case externalIds = "external_ids"
+//        case externalUrls = "external_urls"
+//        case href
+//        case id
+//        case isPlayable = "is_playable"
+//        case linkedFrom = "linked_from"
+//        case restrictions
+//        case name
+//        case popularity
+//        case previewURL = "preview_url"
+//        case trackNumber = "track_number"
+//        case type
+//        case uri
+//        case isLocal = "is_local"
+//    }
+//}
+
+
+

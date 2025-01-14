@@ -54,16 +54,16 @@ class HomeViewController: UIViewController {
         fetchData()
     }
     
- 
+    
     
     // MARK: - UI Setup
     private func setupUI() {
         view.addSubview(collectionView)
         view.addSubview(activityIndicator)
-
+        
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-
+        
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -93,29 +93,204 @@ class HomeViewController: UIViewController {
         collectionView.delegate = self
         collectionView.backgroundColor = .systemBackground
     }
-    // MARK: - API Calls
     private func fetchData() {
         activityIndicator.startAnimating()
         collectionView.isHidden = true
         
         let group = DispatchGroup()
         
-        let semaphore = DispatchSemaphore(value: 5) // Limit to 5 concurrent API calls
         
-        let apiCalls: [() -> Void] = [
-            { self.fetchFollowedArtists(group: group, semaphore: semaphore) },
-            { self.fetchRecentlyPlayed(group: group, semaphore: semaphore) },
-            { self.fetchPlaylists(group: group, semaphore: semaphore) },
-            { self.fetchNewReleases(group: group, semaphore: semaphore) },
-            { self.fetchSavedAlbums(group: group, semaphore: semaphore) },
-            { self.fetchTopArtists(group: group, semaphore: semaphore) },
-            { self.fetchTopTracks(group: group, semaphore: semaphore) }
-        ]
+ 
         
-        for call in apiCalls {
-            call() // Execute each API call
+        AlbumApiCaller.shared.getUserSavedAlbums { [weak self] result in
+            defer {
+                group.enter()
+            }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.savedAlbums = response.items.compactMap { $0.album }
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(title: "Failed to fetch saved albums", message: error.localizedDescription, buttuonTitle: "OK")
+                }
+            }
         }
         
+        SpotifyPlayer.shared.getRecentlyPlayed { [weak self] result in
+            defer {
+                group.leave()
+            }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.recentPlaylist = response.items
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(title: "Recent Played", message: error.localizedDescription, buttuonTitle: "OK")
+                }
+            }
+        }
+        
+        
+        
+        // Fetch Followed Artists and their albums
+        group.enter()
+        UserApiCaller.shared.getFollowedArtists { [weak self] result in
+            defer { group.leave() }
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self.yourFavouriteArtist = response
+                    guard let artistID = response.first?.id else { return }
+                    ArtistApiCaller.shared.getArtistAlbums(artistID: artistID) { [weak self] result in
+                        DispatchQueue.main.async {
+                            switch result {
+                            case .success(let album):
+                                self?.albumsByArtistsYouFollow = album.items
+                            case .failure(let error):
+                                self?.pressSpotyfyAlertThread(
+                                    title: "Albums For Followed Artist",
+                                    message: error.localizedDescription,
+                                    buttuonTitle: "OK"
+                                )
+                            }
+                        }
+                    }
+                    
+                case .failure(let error):
+                    self.pressSpotyfyAlertThread(
+                        title: "Bad Staff",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                    )
+                }
+            }
+        }
+        
+        // Fetch Recently Played
+        group.enter()
+        SpotifyPlayer.shared.getRecentlyPlayed { [weak self] result in
+            defer { group.leave() }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.recentPlaylist = response.items
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(
+                        title: "Recent Played",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                    )
+                }
+            }
+        }
+        
+        // Fetch Playlists
+        group.enter()
+        PlaylistApiCaller.shared.getCurrentUsersPlaylist { [weak self] result in
+            defer { group.leave() }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.playlists = response.items ?? []
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(
+                        title: "Playlist",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                    )
+                }
+            }
+        }
+        
+        // Fetch New Releases
+        group.enter()
+        AlbumApiCaller.shared.getNewReleases { [weak self] result in
+            defer { group.leave() }
+          
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.newReleases = response.albums.items
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(
+                        title: "Fetch new releases",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                    )
+                }
+            }
+        }
+        group.enter()
+        PlaylistApiCaller.shared.getCurrentUsersPlaylist { [weak self] result in
+            defer {
+                group.leave()
+            }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.playlists = response.items ?? []
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(title: "Playlist", message: error.localizedDescription, buttuonTitle: "OK")
+                }
+            }
+        }
+        
+        // Fetch Saved Albums
+        group.enter()
+        AlbumApiCaller.shared.getUserSavedAlbums { [weak self] result in
+            defer { group.leave() }
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.savedAlbums = response.items.compactMap { $0.album }
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(
+                        title: "Failed to fetch saved albums",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                    )
+                }
+            }
+        }
+        
+        // Fetch Top Artists
+        group.enter()
+        UserApiCaller.shared.getUserTopItems(type: "artists") { [weak self] result in
+            defer { group.leave() }
+           
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.topArtists = response
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(
+                        title: "Top Artist Error",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                    )
+                }
+            }
+        }
+        
+        // Fetch Top Tracks
+        group.enter()
+        UserApiCaller.shared.getUserTopItems(type: "tracks") { [weak self] result in
+            defer { group.leave() }
+        
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    self?.topTracks = response
+                case .failure(let error):
+                    self?.pressSpotyfyAlertThread(
+                        title: "Top User Tracks Error",
+                        message: error.localizedDescription,
+                        buttuonTitle: "OK"
+                    )
+                }
+            }
+        }
         
         group.notify(queue: .main) {
             self.activityIndicator.stopAnimating()
@@ -125,329 +300,6 @@ class HomeViewController: UIViewController {
         }
     }
     
-//    private func fetchData() {
-//        activityIndicator.startAnimating()
-//        collectionView.isHidden = true // Hide collection view while loading
-//
-//        let group = DispatchGroup()
-//
-//        // Fetch Followed Artists and their albums
-//        group.enter()
-//        UserApiCaller.shared.getFollowedArtists { [weak self] result in
-//            defer { group.leave() }
-//            guard let self = self else { return }
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let response):
-//                    self.yourFavouriteArtist = response
-//                    if let artistID = response.first?.id {
-//                        self.fetchAlbumsForArtist(artistID, group: group)
-//                    }
-//                case .failure(let error):
-//                    self.pressSpotyfyAlertThread(
-//                        title: "Bad Staff",
-//                        message: error.localizedDescription,
-//                        buttuonTitle: "OK"
-//                    )
-//                }
-//            }
-//        }
-//
-//        // Fetch Recently Played
-//        group.enter()
-//        SpotifyPlayer.shared.getRecentlyPlayed { [weak self] result in
-//            defer { group.leave() }
-//            guard let self = self else { return }
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let response):
-//                    self.recentPlaylist = response.items
-//                case .failure(let error):
-//                    self.pressSpotyfyAlertThread(
-//                        title: "Recent Played",
-//                        message: error.localizedDescription,
-//                        buttuonTitle: "OK"
-//                    )
-//                }
-//            }
-//        }
-//
-//        // Fetch Playlists
-//        group.enter()
-//        PlaylistApiCaller.shared.getCurrentUsersPlaylist { [weak self] result in
-//            defer { group.leave() }
-//            guard let self = self else { return }
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let response):
-//                    self.playlists = response.items ?? []
-//                case .failure(let error):
-//                    self.pressSpotyfyAlertThread(
-//                        title: "Playlist",
-//                        message: error.localizedDescription,
-//                        buttuonTitle: "OK"
-//                    )
-//                }
-//            }
-//        }
-//
-//        // Fetch New Releases
-//        group.enter()
-//        AlbumApiCaller.shared.getNewReleases { [weak self] result in
-//            defer { group.leave() }
-//            guard let self = self else { return }
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let response):
-//                    self.newReleases = response.albums.items
-//                case .failure(let error):
-//                    self.pressSpotyfyAlertThread(
-//                        title: "Fetch new releases",
-//                        message: error.localizedDescription,
-//                        buttuonTitle: "OK"
-//                    )
-//                }
-//            }
-//        }
-//
-//        // Fetch Saved Albums
-//        group.enter()
-//        AlbumApiCaller.shared.getUserSavedAlbums { [weak self] result in
-//            defer { group.leave() }
-//            guard let self = self else { return }
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let response):
-//                    self.savedAlbums = response.items.compactMap { $0.album }
-//                case .failure(let error):
-//                    self.pressSpotyfyAlertThread(
-//                        title: "Failed to fetch saved albums",
-//                        message: error.localizedDescription,
-//                        buttuonTitle: "OK"
-//                    )
-//                }
-//            }
-//        }
-//
-//        // Fetch Top Artists
-//        group.enter()
-//        UserApiCaller.shared.getUserTopItems(type: "artists") { [weak self] result in
-//            defer { group.leave() }
-//            guard let self = self else { return }
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let response):
-//                    self.topArtists = response
-//                case .failure(let error):
-//                    self.pressSpotyfyAlertThread(
-//                        title: "Top Artist Error",
-//                        message: error.localizedDescription,
-//                        buttuonTitle: "OK"
-//                    )
-//                }
-//            }
-//        }
-//
-//        // Fetch Top Tracks
-//        group.enter()
-//        UserApiCaller.shared.getUserTopItems(type: "tracks") { [weak self] result in
-//            defer { group.leave() }
-//            guard let self = self else { return }
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let response):
-//                    self.topTracks = response
-//                case .failure(let error):
-//                    self.pressSpotyfyAlertThread(
-//                        title: "Top User Tracks Error",
-//                        message: error.localizedDescription,
-//                        buttuonTitle: "OK"
-//                    )
-//                }
-//            }
-//        }
-//
-//        group.notify(queue: .main) {
-//            self.activityIndicator.stopAnimating()
-//            self.collectionView.isHidden = false
-//            self.configureModels()
-//            self.filterSections(for: 0)
-//        }
-//    }
-//
-//    // MARK: - Helper Function to Fetch Albums for an Artist
-    private func fetchAlbumsForArtist(_ artistID: String, group: DispatchGroup) {
-        group.enter()
-        ArtistApiCaller.shared.getArtistAlbums(artistID: artistID) { [weak self] result in
-            defer { group.leave() }
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let album):
-                    self.albumsByArtistsYouFollow = album.items
-                case .failure(let error):
-                    self.pressSpotyfyAlertThread(
-                        title: "Albums For Followed Artist",
-                        message: error.localizedDescription,
-                        buttuonTitle: "OK"
-                    )
-                }
-            }
-        }
-    }
-    
-    // MARK: - API Call Wrappers
-       private func fetchFollowedArtists(group: DispatchGroup, semaphore: DispatchSemaphore) -> Void {
-           group.enter()
-           semaphore.wait() // Wait for an available slot
-           UserApiCaller.shared.getFollowedArtists { [weak self] result in
-               defer {
-                   semaphore.signal() // Release the slot
-                   group.leave()
-               }
-               DispatchQueue.main.async {
-                   switch result {
-                   case .success(let response):
-                       self?.yourFavouriteArtist = response
-                       if let artistID = response.first?.id {
-                           self?.fetchAlbumsForArtist(artistID, group: group)
-                       }
-
-                   case .failure(let error):
-                       self?.pressSpotyfyAlertThread(title: "Error", message: error.localizedDescription, buttuonTitle: "OK")
-                   }
-               }
-           }
-       }
-
-       private func fetchRecentlyPlayed(group: DispatchGroup, semaphore: DispatchSemaphore) -> Void {
-           group.enter()
-           semaphore.wait()
-           SpotifyPlayer.shared.getRecentlyPlayed { [weak self] result in
-               defer {
-                   semaphore.signal()
-                   group.leave()
-               }
-               DispatchQueue.main.async {
-                   switch result {
-                   case .success(let response):
-                       self?.recentPlaylist = response.items
-                   case .failure(let error):
-                       self?.pressSpotyfyAlertThread(title: "Recent Played", message: error.localizedDescription, buttuonTitle: "OK")
-                   }
-               }
-           }
-       }
-
-       private func fetchPlaylists(group: DispatchGroup, semaphore: DispatchSemaphore) -> Void {
-           group.enter()
-           semaphore.wait()
-           PlaylistApiCaller.shared.getCurrentUsersPlaylist { [weak self] result in
-               defer {
-                   semaphore.signal()
-                   group.leave()
-               }
-               DispatchQueue.main.async {
-                   switch result {
-                   case .success(let response):
-                       self?.playlists = response.items ?? []
-                   case .failure(let error):
-                       self?.pressSpotyfyAlertThread(title: "Playlist", message: error.localizedDescription, buttuonTitle: "OK")
-                   }
-               }
-           }
-       }
-
-       private func fetchNewReleases(group: DispatchGroup, semaphore: DispatchSemaphore) -> Void {
-           group.enter()
-           semaphore.wait()
-           AlbumApiCaller.shared.getNewReleases { [weak self] result in
-               defer {
-                   semaphore.signal()
-                   group.leave()
-               }
-               DispatchQueue.main.async {
-                   switch result {
-                   case .success(let response):
-                       self?.newReleases = response.albums.items
-                   case .failure(let error):
-                       self?.pressSpotyfyAlertThread(
-                        title: "Fetch new releases",
-                        message: error.localizedDescription,
-                        buttuonTitle: "OK"
-                       )
-                   }
-               }
-           }
-       }
-
-       private func fetchSavedAlbums(group: DispatchGroup, semaphore: DispatchSemaphore) -> Void {
-           group.enter()
-           semaphore.wait()
-           AlbumApiCaller.shared.getUserSavedAlbums { [weak self] result in
-               defer {
-                   semaphore.signal()
-                   group.leave()
-               }
-               DispatchQueue.main.async {
-                   switch result {
-                   case .success(let response):
-                       self?.savedAlbums = response.items.compactMap { $0.album }
-                   case .failure(let error):
-                       self?.pressSpotyfyAlertThread(title: "Failed to fetch saved albums", message: error.localizedDescription, buttuonTitle: "OK")
-                   }
-               }
-           }
-       }
-
-       private func fetchTopArtists(group: DispatchGroup, semaphore: DispatchSemaphore) -> Void {
-           group.enter()
-           semaphore.wait()
-           UserApiCaller.shared.getUserTopItems(type: "artists") { [weak self] result in
-               defer {
-                   semaphore.signal()
-                   group.leave()
-               }
-               DispatchQueue.main.async {
-                   switch result {
-                   case .success(let response):
-                       self?.topArtists = response
-                   case .failure(let error):
-                       self?.pressSpotyfyAlertThread(
-                        title: "Top Artist Error",
-                        message: error.localizedDescription,
-                        buttuonTitle: "OK"
-                       )
-                   }
-               }
-           }
-       }
-
-       private func fetchTopTracks(group: DispatchGroup, semaphore: DispatchSemaphore) -> Void {
-           group.enter()
-           semaphore.wait()
-           UserApiCaller.shared.getUserTopItems(type: "tracks") { [weak self] result in
-               defer {
-                   semaphore.signal()
-                   group.leave()
-               }
-               DispatchQueue.main.async {
-                   switch result {
-                   case .success(let response):
-                       self?.topTracks = response
-                   case .failure(let error):
-                       self?.pressSpotyfyAlertThread(
-                        title: "Top User Tracks Error",
-                        message: error.localizedDescription,
-                        buttuonTitle: "OK"
-                       )
-                   }
-               }
-           }
-       }
-
-    
-
     
     // MARK: - Data Configuration
     private func configureModels() {
@@ -483,17 +335,17 @@ class HomeViewController: UIViewController {
         }
         sections.append(.albumsByArtistsYouFollow(viewModels: albumsByArtisYouFollowViewModels))
         
-    
+        
         var recentPlaylistViewModels: [RecentPlaylistCellViewModel] = []
         var albumTracksDict: [String: [RecentPlaylistCellViewModel]] = [:]
         var playlistTracksDict: [String: [RecentPlaylistCellViewModel]] = [:]
         var artistTracksDict: [String: [RecentPlaylistCellViewModel]] = [:]
         var showTracksDict: [String: [RecentPlaylistCellViewModel]] = [:]
-
+        
         for item in recentPlaylist {
             guard let track = item.track else { continue }
             guard let name = track.name, let objectType = track.type else { continue }
-
+            
             let viewModel = RecentPlaylistCellViewModel(
                 name: name,
                 artUrl: URL(string: track.album?.images?.first?.url ?? ""),
@@ -501,38 +353,38 @@ class HomeViewController: UIViewController {
                 artistName: track.artists?.first?.name ?? "Unknown Artist",
                 objectType: objectType
             )
-
+            
             switch objectType {
             case "album":
                 print("Album Found: \(track.album?.name ?? "Unknown Album")")
                 if let albumName = track.album?.name {
                     albumTracksDict[albumName, default: []].append(viewModel)
                 }
-
+                
             case "playlist":
                 print("Playlist Found: \(item.context?.uri ?? "Unknown Playlist")")
                 if let playlistName = item.context?.uri {
                     playlistTracksDict[playlistName, default: []].append(viewModel)
                 }
-
+                
             case "artist":
                 print("Artist Found: \(track.artists?.first?.name ?? "Unknown Artist")")
                 if let artistName = track.artists?.first?.name {
                     artistTracksDict[artistName, default: []].append(viewModel)
                 }
-
+                
             case "show":
                 print("Show Found: \(item.context?.uri ?? "Unknown Show")")
                 if let showName = item.context?.uri {
                     showTracksDict[showName, default: []].append(viewModel)
                 }
-
+                
             default:
                 print("Unknown Type Found")
                 recentPlaylistViewModels.append(viewModel)
             }
         }
-
+        
         // Consolidate grouped tracks into single entries by their category (album, playlist, artist, show)
         albumTracksDict.forEach { albumName, tracks in
             let albumViewModel = RecentPlaylistCellViewModel(
@@ -544,7 +396,7 @@ class HomeViewController: UIViewController {
             )
             recentPlaylistViewModels.append(albumViewModel)
         }
-
+        
         playlistTracksDict.forEach { playlistName, tracks in
             let playlistViewModel = RecentPlaylistCellViewModel(
                 name: playlistName,
@@ -555,7 +407,7 @@ class HomeViewController: UIViewController {
             )
             recentPlaylistViewModels.append(playlistViewModel)
         }
-
+        
         artistTracksDict.forEach { artistName, tracks in
             let artistViewModel = RecentPlaylistCellViewModel(
                 name: artistName,
@@ -566,7 +418,7 @@ class HomeViewController: UIViewController {
             )
             recentPlaylistViewModels.append(artistViewModel)
         }
-
+        
         showTracksDict.forEach { showName, tracks in
             let showViewModel = RecentPlaylistCellViewModel(
                 name: showName,
@@ -577,20 +429,20 @@ class HomeViewController: UIViewController {
             )
             recentPlaylistViewModels.append(showViewModel)
         }
-
+        
         // Now, all `recentPlaylistViewModels` should contain the right information for all types
         sections.append(.recentPlaylist(viewModels: recentPlaylistViewModels))
-
+        
         
         // New Releases
         let yourFavouriteArtistViewModels = yourFavouriteArtist.map {
             YourFavouriteArtistCellViewModel(
-                name: $0.name,
+                name: $0.name ?? "",
                 artUrl: URL(string: $0.images?.first?.url ?? ""),
-               numberOfTracks: $0.popularity ?? 0,
-               artistName: $0.genres?.joined(separator: "") ?? ""
-           )
-       }
+                numberOfTracks: $0.popularity ?? 0,
+                artistName: $0.genres?.joined(separator: "") ?? ""
+            )
+        }
         sections.append(.yourFavouriteArtist(viewModels: yourFavouriteArtistViewModels))
         
         
@@ -604,9 +456,9 @@ class HomeViewController: UIViewController {
             )
         }
         sections.append(.savedAlbums(viewModels: savedAlbumViewModels))
-     
         
-    
+        
+        
         // Top Artists
         let artistViewModels = topArtists.map {
             TopArtistCellViewModel(
@@ -650,9 +502,9 @@ class HomeViewController: UIViewController {
             
             return viewModel
         }
-
+        
         sections.append(.topTracks(viewModels: trackViewModels))
-
+        
     }
     
     private func reloadUIForTrack(trackID: String) {
@@ -869,13 +721,19 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             
         case .savedAlbums:
             let selectedSavedAlbum = savedAlbums[indexPath.row]
-            let detailVC = AlbumDetailViewController(albumID: selectedSavedAlbum.id ?? "")
-            navigationController?.pushViewController(detailVC, animated: true)
+            if let selectedSavedAlbumID = selectedSavedAlbum.id {
+                let detailVC = AlbumDetailViewController(albumID: selectedSavedAlbumID)
+                navigationController?.pushViewController(detailVC, animated: true)
+            }
+            
             
         case .yourFavouriteArtist:
             let selectedYourFavouriteArtist = yourFavouriteArtist[indexPath.row]
-            let detailVC = ArtistViewController(artistID: selectedYourFavouriteArtist.id)
-            navigationController?.pushViewController(detailVC, animated: true)
+            if let selectedYOurFavouriteArtistID = selectedYourFavouriteArtist.id {
+                let detailVC = ArtistViewController(artistID: selectedYOurFavouriteArtistID)
+                navigationController?.pushViewController(detailVC, animated: true)
+            }
+           
             
             
         case .albumsByArtistsYouFollow:

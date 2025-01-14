@@ -53,5 +53,44 @@ struct Album: Codable  {
     }
 }
 
+//struct Album: Codable {
+//    let albumType: String
+//    let totalTracks: Int
+//    let availableMarkets: [String]
+//    let externalUrls: ExternalUrls
+//    let href: String
+//    let id: String
+//    let images: [Image]
+//    let name: String
+//    let releaseDate: String
+//    let releaseDatePrecision: String
+//    let restrictions: Restrictions?
+//    let type: String
+//    let uri: String
+//    let artists: [Artist]
+//
+//    enum CodingKeys: String, CodingKey {
+//        case albumType = "album_type"
+//        case totalTracks = "total_tracks"
+//        case availableMarkets = "available_markets"
+//        case externalUrls = "external_urls"
+//        case href
+//        case id
+//        case images
+//        case name
+//        case releaseDate = "release_date"
+//        case releaseDatePrecision = "release_date_precision"
+//        case restrictions
+//        case type
+//        case uri
+//        case artists
+//    }
+//}
+
+
+
+
+
+
 
 

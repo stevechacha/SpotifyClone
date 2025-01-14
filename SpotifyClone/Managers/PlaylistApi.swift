@@ -19,7 +19,7 @@ final class PlaylistApiCaller {
     }
     
     // MARK: - Get Playlist by ID
-    public func getPlaylistDetails(playlistID: String, completion: @escaping (Result<Playlists, Error>) -> Void) {
+    public func getPlaylistDetails(playlistID: String, completion: @escaping (Result<SpotifyPlaylist, Error>) -> Void) {
         guard let url = URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)") else { return }
         
         AuthManager.shared.createRequest(with: url, type: .GET) { request in
@@ -29,7 +29,7 @@ final class PlaylistApiCaller {
                     return
                 }
                 do {
-                    let response = try JSONDecoder().decode(Playlists.self, from: data)
+                    let response = try JSONDecoder().decode(SpotifyPlaylist.self, from: data)
                     completion(.success(response))
                 } catch {
                     print("Error decoding Playlists: \(error)")
@@ -199,7 +199,7 @@ final class PlaylistApiCaller {
     func addTracksToPlayList(
         track: Track,
         playlistID: String,
-        completion : @escaping (Result< Bool,Error>)->Void
+        completion : @escaping (Bool)->Void
     ){
         AuthManager.shared.createRequest(
             with: URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)/tracks"),
@@ -216,12 +216,12 @@ final class PlaylistApiCaller {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 guard let data = data, error == nil else {
-                    completion(.failure(ApiError.failedToGetData))
+                    completion(false)
                     return
                 }
                 
                 guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                    completion(.failure(ApiError.invalidResponse(statusCode: 400)))
+                    completion(false)
                     return
                 }
                 
@@ -230,13 +230,13 @@ final class PlaylistApiCaller {
                     print(result)
                     if let response = result as? [String: Any],
                        response["snapshot_id"] as? String != nil {
-                        completion(.success(true))
+                        completion(true)
                     } else {
-                        completion(.failure(ApiError.invalidResponse(statusCode: httpResponse.statusCode)))
+                        completion(false)
                     }
                 } catch {
                     print("Error decoding Playlists: \(error)")
-                    completion(.failure(ApiError.invalidResponse(statusCode: httpResponse.statusCode)))
+                    completion(false)
                 }
             }
             task.resume()
@@ -293,15 +293,6 @@ final class PlaylistApiCaller {
         }
     
 
-
-
-    
-
-
-
-
-    
-    
     // MARK: - Get Playlist Cover Image
     public func getPlaylistCoverImage(playlistID: String, completion: @escaping (Result<[APIImage], Error>) -> Void) {
         AuthManager.shared.createRequest(with: URL(string: "\(Constants.baseAPIURL)/playlists/\(playlistID)/images"), type: .GET) { request in
@@ -375,8 +366,6 @@ final class PlaylistApiCaller {
             }
             dispatchGroup.leave()
         }
-        
-
         
         // Wait for all API calls to complete
         dispatchGroup.notify(queue: .main) {

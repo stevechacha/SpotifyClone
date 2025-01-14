@@ -11,7 +11,7 @@ import Combine
 
 class PlaylistViewModel: ObservableObject {
     @Published var userPlaylists: CurrentUsersPlaylistsResponse?
-    @Published var selectedPlaylist: Playlists?
+    @Published var selectedPlaylist: SpotifyPlaylist?
     @Published var playlistTracks: PlaylistTracksResponse?
     @Published var playlistCoverImage: [APIImage]?
     @Published var errorMessage: String?

@@ -22,15 +22,15 @@ struct FollowedArtistsResponse: Decodable {
 
 
 struct FollowedArtist: Decodable {
-    let name: String
-    let id: String
+    let name: String?
+    let id: String?
     let images: [APIImage]?
     let genres: [String]?
     let popularity: Int?
-    let followers: Followers
-    let type: String
-    let uri: String
-    let href: String
+    let followers: Followers?
+    let type: String?
+    let uri: String?
+    let href: String?
     let externalUrls: ExternalUrls?
 }
 

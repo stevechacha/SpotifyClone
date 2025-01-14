@@ -13,8 +13,3 @@ struct SpotifyArtistsTopTracksResponse: Codable {
 }
 
 
-struct ExternalIds: Codable {
-    let isrc: String?
-    let ean: String?
-    let upc: String?
-}

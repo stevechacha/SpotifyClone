@@ -12,3 +12,16 @@ struct ExternalIDs: Codable {
     let ean: String?
     let upc: String?
 }
+
+struct ExternalIds: Codable {
+    let isrc: String?
+    let ean: String?
+    let upc: String?
+}
+
+//struct ExternalIds: Codable {
+//    let isrc: String?
+//    let ean: String?
+//    let upc: String?
+//}
+

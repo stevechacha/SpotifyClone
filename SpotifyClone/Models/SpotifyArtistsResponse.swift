@@ -11,11 +11,6 @@ struct SpotifyArtistsResponse: Codable  {
 }
 
 
-struct Followers: Codable {
-    let href: String?
-    let total: Int?
-}
-
 struct SpotifyArtistsDetailResponse: Codable {
     let externalUrls: ExternalUrls?
     let followers: Followers?

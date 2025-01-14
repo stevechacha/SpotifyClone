@@ -57,3 +57,5 @@ struct TrackDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 }
+
+

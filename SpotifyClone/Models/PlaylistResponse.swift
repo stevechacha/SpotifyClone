@@ -8,6 +8,39 @@
 import Foundation
 
 
+struct Playlist: Codable {
+    let collaborative: Bool?
+    let description: String?
+    let externalUrls: ExternalUrls?
+    let followers: Followers?
+    let href: String?
+    let id: String?
+    let images: [APIImage]?
+    let name: String?
+    let owner: Owner?
+    let isPublic: Bool?
+    let snapshotId: String?
+    let tracks: Tracks?
+    let type: String?
+    let uri: String?
+
+    enum CodingKeys: String, CodingKey {
+        case collaborative
+        case description
+        case externalUrls = "external_urls"
+        case followers
+        case href
+        case id
+        case images
+        case name
+        case owner
+        case isPublic = "public"
+        case snapshotId = "snapshot_id"
+        case tracks
+        case type
+        case uri
+    }
+}
 // MARK: - Playlists
 struct Playlists: Codable {
     let href: String?
@@ -75,38 +108,6 @@ struct PlaylistItem: Codable , Identifiable {
 }
 
 
-// MARK: - Owner
-struct Owner: Codable {
-    let externalUrls: ExternalURLs?
-    let followers: Followers?
-    let href: String
-    let id: String
-    let type: String
-    let uri: String
-    let displayName: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case externalUrls = "external_urls"
-        case followers, href, id, type, uri
-        case displayName = "display_name"
-    }
-}
 
-
-
-// MARK: - Added By
-struct AddedBy: Codable {
-    let externalUrls: ExternalURLs?
-    let followers: Followers?
-    let href: String
-    let id: String
-    let type: String
-    let uri: String
-    
-    enum CodingKeys: String, CodingKey {
-        case externalUrls = "external_urls"
-        case followers, href, id, type, uri
-    }
-}
 
 
