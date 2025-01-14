@@ -17,7 +17,7 @@ struct Audiobook: Codable {
     let explicit: Bool?
     let externalUrls: ExternalURLs?
     let href: String?
-    let id: String
+    let id: String?
     let images: [APIImage]?
     let languages: [String]?
     let mediaType: String?

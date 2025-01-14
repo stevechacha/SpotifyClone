@@ -16,3 +16,8 @@ struct ExternalUrls: Codable {
 }
 
 
+//struct ExternalUrls: Codable {
+//    let spotify: String
+//}
+
+

@@ -38,7 +38,7 @@ class CreatePlaylistViewController: UIViewController {
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = .darkGray
         button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(didTapCancel), for: .touchUpInside)
+        button.addTarget(CreatePlaylistViewController.self, action: #selector(didTapCancel), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -49,7 +49,7 @@ class CreatePlaylistViewController: UIViewController {
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = .systemGreen
         button.layer.cornerRadius = 8
-        button.addTarget(self, action: #selector(didTapCreate), for: .touchUpInside)
+        button.addTarget(CreatePlaylistViewController.self, action: #selector(didTapCreate), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
