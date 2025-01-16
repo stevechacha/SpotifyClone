@@ -14,7 +14,7 @@ struct SpotifyPlaylist: Codable {
     let externalUrls: ExternalUrls?
     let followers: Followers?
     let href: String?
-    let id: String
+    let id: String?
     let images: [APIImage]?
     let name: String?
     let owner: Owner?
@@ -44,20 +44,20 @@ struct SpotifyPlaylist: Codable {
 
 
 struct SpotifyPlaylistTracks: Codable {
-    let href: String
-    let limit: Int
+    let href: String?
+    let limit: Int?
     let next: String?
-    let offset: Int
+    let offset: Int?
     let previous: String?
-    let total: Int
-    let items: [SpotifyPlaylistTrackItem]
+    let total: Int?
+    let items: [SpotifyPlaylistTrackItem]?
 }
 
 struct SpotifyPlaylistTrackItem: Codable {
-    let addedAt: String
-    let addedBy: AddedBy
-    let isLocal: Bool
-    let track: Track
+    let addedAt: String?
+    let addedBy: AddedBy?
+    let isLocal: Bool?
+    let track: Track?
 
     enum CodingKeys: String, CodingKey {
         case addedAt = "added_at"

@@ -237,35 +237,59 @@ class SpotifyPlayer {
     
     // MARK: - Get Recently Played
     public func getRecentlyPlayed(completion: @escaping (Result<RecentlyPlayedResponse, Error>) -> Void) {
-        AuthManager.shared.createRequest(with: URL(string: "https://api.spotify.com/v1/me/player/recently-played"), type: .GET) { request in
+        AuthManager.shared.createRequest(
+            with: URL(string: "https://api.spotify.com/v1/me/player/recently-played"),
+            type: .GET
+        ) { request in
+            
+            // Perform the network task
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                guard let data = data, error == nil else {
+                // Check for network error
+                if let error = error {
+                    print("Network error: \(error.localizedDescription)")
                     completion(.failure(ApiError.failedToGetData))
                     return
                 }
-                if let httpResponse = response as? HTTPURLResponse {
-                    print("Status Code: \(httpResponse.statusCode)")
-                    guard (200...299).contains(httpResponse.statusCode) else {
-                        completion(.failure(ApiError.failedToGetData))
-                        return
+                
+                // Validate the HTTP response
+                guard
+                    let httpResponse = response as? HTTPURLResponse,
+                    (200...299).contains(httpResponse.statusCode)
+                else {
+                    if let httpResponse = response as? HTTPURLResponse {
+                        print("HTTP Error: Status Code \(httpResponse.statusCode)")
+                    } else {
+                        print("Invalid response from server.")
                     }
+                    completion(.failure(ApiError.failedToGetData))
+                    return
                 }
                 
-                // Debugging: Log raw data
+                // Ensure data is non-nil
+                guard let data = data else {
+                    print("No data received.")
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                
+                // Log raw JSON response for debugging
                 if let jsonString = String(data: data, encoding: .utf8) {
                     print("From PlaylistAPI Response JSON: \(jsonString)")
                 }
+                
+                // Decode the JSON response
                 do {
-                    let response = try JSONDecoder().decode(RecentlyPlayedResponse.self, from: data)
-                    completion(.success(response))
+                    let decodedResponse = try JSONDecoder().decode(RecentlyPlayedResponse.self, from: data)
+                    completion(.success(decodedResponse))
                 } catch {
-                    print("Error decoding CurrentUsersPlaylistsResponse: \(error)")
+                    print("Decoding error: \(error.localizedDescription)")
                     completion(.failure(error))
                 }
             }
             task.resume()
         }
     }
+
     
     func fetchCategories(completion: @escaping ([SpotifyCategory]) -> Void) {
         guard let url = URL(string: "https://api.spotify.com/v1/browse/categories") else { return }

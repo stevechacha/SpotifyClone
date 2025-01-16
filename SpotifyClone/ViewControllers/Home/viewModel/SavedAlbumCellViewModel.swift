@@ -13,6 +13,7 @@ struct SavedAlbumCellViewModel {
     let numberOfTracks: Int
     let artistName: String
     
+    
     // Computed property to format the number of tracks
     var tracksText: String {
         return "\(numberOfTracks) \(numberOfTracks == 1 ? "track" : "tracks")"

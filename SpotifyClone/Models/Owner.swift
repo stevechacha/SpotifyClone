@@ -9,10 +9,10 @@
 struct Owner: Codable {
     let externalUrls: ExternalURLs?
     let followers: Followers?
-    let href: String
-    let id: String
-    let type: String
-    let uri: String
+    let href: String?
+    let id: String?
+    let type: String?
+    let uri: String?
     let displayName: String?
     
     enum CodingKeys: String, CodingKey {

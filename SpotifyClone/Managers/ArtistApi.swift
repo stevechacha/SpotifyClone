@@ -43,7 +43,11 @@ final class ArtistApiCaller {
             return
         }
 
-        performRequest(url: url, responseType: SpotifyArtistsDetailResponse.self, completion: completion)
+        performRequest(
+            url: url,
+            responseType: SpotifyArtistsDetailResponse.self,
+            completion: completion
+        )
     }
 
 
@@ -59,7 +63,11 @@ final class ArtistApiCaller {
             return
         }
 
-        performRequest(url: url, responseType: SpotifyArtistsResponse.self, completion: completion)
+        performRequest(
+            url: url,
+            responseType: SpotifyArtistsResponse.self,
+            completion: completion
+        )
     }
 
   
@@ -72,7 +80,11 @@ final class ArtistApiCaller {
             return
         }
 
-        performRequest(url: url, responseType: SpotifyArtistsAlbumsResponse.self, completion: completion)
+        performRequest(
+            url: url,
+            responseType: SpotifyArtistsAlbumsResponse.self,
+            completion: completion
+        )
     }
 
 
@@ -85,7 +97,11 @@ final class ArtistApiCaller {
             completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
             return
         }
-        performRequest(url: url, responseType: SpotifyArtistsTopTracksResponse.self, completion: completion)
+        performRequest(
+            url: url,
+            responseType: SpotifyArtistsTopTracksResponse.self,
+            completion: completion
+        )
     }
 
     func getRelatedArtists(
@@ -96,8 +112,11 @@ final class ArtistApiCaller {
             completion(.failure(NSError(domain: "Invalid URL", code: 400, userInfo: nil)))
             return
         }
-
-        performRequest(url: url, responseType: SpotifyArtistRelatedArtistsResponse.self, completion: completion)
+        performRequest(
+            url: url,
+            responseType: SpotifyArtistRelatedArtistsResponse.self,
+            completion: completion
+        )
     }
     
 
@@ -135,8 +154,8 @@ final class ArtistApiCaller {
         searchArtists(query: name) { result in
             switch result {
             case .success(let artists):
-                if let firstArtist = artists.first {
-                    completion(.success(firstArtist.id))
+                if let firstArtist = artists.first?.id {
+                    completion(.success(firstArtist))
                 } else {
                     completion(.failure(NSError(domain: "Artist not found", code: 404, userInfo: nil)))
                 }
@@ -171,29 +190,24 @@ final class ArtistApiCaller {
                 if let httpResponse = response as? HTTPURLResponse {
                     print("Status Code: \(httpResponse.statusCode)")
                     
-                    // Handle Rate Limit Exceeded (429)
                     if httpResponse.statusCode == 429 {
                         if let retryAfterString = httpResponse.value(forHTTPHeaderField: "Retry-After"),
                            let retryAfter = Double(retryAfterString) {
                             print("Rate limit exceeded. Retrying after \(retryAfter) seconds.")
                             
-                            // Show feedback to the user that a wait is required
                             DispatchQueue.main.async {
-                                // Example of how to show a message or loading indicator
                                 let alert = UIAlertController(
                                     title: "Rate Limit Exceeded",
                                     message: "Please wait for \(Int(retryAfter)) seconds before trying again.",
                                     preferredStyle: .alert
                                 )
                                 alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                                // Present alert to the user
                                 if let viewController = self.topMostViewController() {
                                     viewController.present(alert, animated: true, completion: nil)
                                 }
                             }
                             
-                            // Wait before retrying based on Retry-After header
-                            DispatchQueue.global().asyncAfter(deadline: .now() + retryAfter) {
+                           DispatchQueue.global().asyncAfter(deadline: .now() + retryAfter) {
                                 self.performRequest(
                                     url: url,
                                     responseType: responseType,
@@ -220,7 +234,6 @@ final class ArtistApiCaller {
                     let result = try JSONDecoder().decode(responseType, from: data)
                     completion(.success(result))
                 } catch {
-                    // Log raw response for debugging
                     if let responseString = String(data: data, encoding: .utf8) {
                         print("Raw Response: \(responseString)")
                     }
@@ -274,9 +287,7 @@ enum ArtistApiError : LocalizedError {
         case .jsonParsingFailure:
             return "Failed to parse JSON data."
         }
-        
     }
-
 }
 
 

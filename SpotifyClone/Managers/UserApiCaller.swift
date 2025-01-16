@@ -40,7 +40,6 @@ final class UserApiCaller {
                     print("Response Code: \(response.statusCode)")
                 }
                 
-                
                 do {
                     let userProfile = try JSONDecoder().decode(UserProfile.self, from: data)
                     print(userProfile)

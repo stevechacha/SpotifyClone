@@ -32,7 +32,7 @@ final class PlaylistApiCaller {
                     let response = try JSONDecoder().decode(SpotifyPlaylist.self, from: data)
                     completion(.success(response))
                 } catch {
-                    print("Error decoding Playlists: \(error)")
+                    print("Error decoding getPlaylistDetails Playlists: \(error)")
                     completion(.failure(error))
                 }
             }
@@ -101,7 +101,7 @@ final class PlaylistApiCaller {
                     let result = try JSONDecoder().decode(Playlists.self, from: data)
                     completion(.success(result))
                 } catch {
-                    print("Error decoding Playlists: \(error)")
+                    print("Error decoding savePlaylist Playlists: \(error)")
                     completion(.failure(error))
                 }
             }
@@ -166,7 +166,7 @@ final class PlaylistApiCaller {
                     let result = try JSONDecoder().decode(Playlists.self, from: data)
                     completion(.success(result))
                 } catch {
-                    print("Error decoding Playlists: \(error)")
+                    print("Error decoding changePlaylistDetails Playlists: \(error)")
                     completion(.failure(error))
                 }
             }
@@ -235,7 +235,7 @@ final class PlaylistApiCaller {
                         completion(false)
                     }
                 } catch {
-                    print("Error decoding Playlists: \(error)")
+                    print("Error decoding AddPlaylists: \(error)")
                     completion(false)
                 }
             }
@@ -284,7 +284,7 @@ final class PlaylistApiCaller {
                             completion(.failure(ApiError.invalidResponse(statusCode: httpResponse.statusCode)))
                         }
                     } catch {
-                        print("Error decoding Playlists: \(error)")
+                        print("Error decoding RemovePlaylists: \(error)")
                         completion(.failure(ApiError.invalidResponse(statusCode: httpResponse.statusCode)))
                     }
                 }

@@ -46,9 +46,7 @@ final class SearchApi {
                 }
             }
             task.resume()
-            
         }
-        
     }
     
     private func constructURL(base: String, parameters: [String: String]) -> URL? {

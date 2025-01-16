@@ -12,7 +12,9 @@ class SpotifyCategoryAPI {
     static let shared = SpotifyCategoryAPI()
 
     // Fetch categories from Spotify API
-    func getSeveralBrowseCategories(completion: @escaping (Result<[SingleBrowseCategory], Error>) -> Void) {
+    func getSeveralBrowseCategories(
+        completion: @escaping (Result<[SingleBrowseCategory], Error>) -> Void
+    ) {
         guard let url = URL(string: "https://api.spotify.com/v1/browse/categories") else {
             completion(.failure(ApiError.invalidURL))
             return
@@ -40,7 +42,10 @@ class SpotifyCategoryAPI {
         }
     }
     
-    func getSeveralBrowseCategories(categoryId: String,completion: @escaping (Result<SingleBrowseCategory, Error>) -> Void) {
+    func getSeveralBrowseCategories(
+        categoryId: String,
+        completion: @escaping (Result<SingleBrowseCategory, Error>) -> Void
+    ) {
         guard let url = URL(string: "https://api.spotify.com/v1/browse/categories/\(categoryId)") else {
             completion(.failure(ApiError.invalidURL))
             return
