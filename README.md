@@ -54,6 +54,8 @@ This is a **Spotify Clone App** built using **Swift** and **UIKit**, designed to
 
 <p align="center">
   <img src="https://github.com/stevechacha/SpotifyClone/raw/main/Screenshot/5.png" width="45%" />
+  <img src="https://github.com/stevechacha/SpotifyClone/raw/main/Screenshot/6.png" width="45%" />
+
 </p>
 
 - iOS 13.0+
