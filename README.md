@@ -40,7 +40,23 @@ This is a **Spotify Clone App** built using **Swift** and **UIKit**, designed to
 
 ## Requirements
 
-- iOS 15.0+
+## Screenshots
+
+<p align="center">
+  <img src="https://github.com/stevechacha/SpotifyClone/raw/main/Screenshot/1.png" width="45%" />
+  <img src="https://github.com/stevechacha/SpotifyClone/raw/main/Screenshot/2.png" width="45%" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/stevechacha/SpotifyClone/raw/main/Screenshot/3.png" width="45%" />
+  <img src="https://github.com/stevechacha/SpotifyClone/raw/main/Screenshot/4.png" width="45%" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/stevechacha/SpotifyClone/raw/main/Screenshot/5.png" width="45%" />
+</p>
+
+- iOS 13.0+
 - Xcode 14+
 - Spotify Developer Account
 
