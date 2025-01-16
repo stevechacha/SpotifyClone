@@ -16,8 +16,8 @@ final class AuthManager {
     // MARK: - Constants
     
     struct Constants {
-        static let clientID = "CLIENT ID" // Replace with your client ID
-        static let clientSecret = "CLIENT SECRET" // Replace with your client secret
+        static let clientID = "CLIENT_ID" // Replace with your client ID
+        static let clientSecret = "CLIENT_SECRET" // Replace with your client secret
         static let tokenAPIURL = "https://accounts.spotify.com/api/token"
         static let redirectURI = "http://localhost:3000/callback" // Replace with your registered redirect URI
         
@@ -154,8 +154,6 @@ final class AuthManager {
         }
     }
     
-
-    
     
     // MARK: - Refresh Token
     public func refreshAccessToken(completion: @escaping (Bool) -> Void) {
@@ -207,7 +205,6 @@ final class AuthManager {
         guard let basicData = basicToken.data(using: .utf8) else { return "" }
         return basicData.base64EncodedString()
     }
-    
     
     
     // MARK: - Cache Tokens

@@ -1,28 +1,14 @@
 //
-//  SearchViewController.swift
+//  AddPlaylistSearchViewController.swift
 //  SpotifyClone
 //
-//  Created by stephen chacha on 03/01/2025.
+//  Created by stephen chacha on 15/01/2025.
 //
-
 
 import UIKit
 
 
-// MARK: - Models & Services
-enum SearchResult {
-    case track(Track)
-    case artist(Artist)
-    case album(Album)
-    case playlist(PlaylistItem)
-    case audiobook(Audiobook)
-    case show(Show)
-    case episode(Episode)
-    case chapter(Chapter)
-}
-
-
-class SearchViewController: UIViewController {
+class AddPlaylistSearchViewController: UIViewController {
 
     // MARK: - Properties
     private let searchBarContainer = UIView() // Container for better styling of the search bar
@@ -76,7 +62,7 @@ class SearchViewController: UIViewController {
         // Configure Table View
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.register(SearchResultTableViewCell.self, forCellReuseIdentifier: SearchResultTableViewCell.identifier)
+        tableView.register(AddPlaylistSearchTableViewCell.self, forCellReuseIdentifier: AddPlaylistSearchTableViewCell.identifier)
         view.addSubview(tableView)
         tableView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -141,14 +127,17 @@ class SearchViewController: UIViewController {
 }
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
-extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
+extension AddPlaylistSearchViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return searchResults.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let result = searchResults[indexPath.row]
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: SearchResultTableViewCell.identifier, for: indexPath) as? SearchResultTableViewCell else {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: AddPlaylistSearchTableViewCell.identifier,
+            for: indexPath
+        ) as? AddPlaylistSearchTableViewCell else {
             return UITableViewCell()
         }
         cell.configure(with: result)
@@ -196,7 +185,7 @@ extension SearchViewController: UITableViewDelegate, UITableViewDataSource {
 }
 
 // MARK: - UISearchBarDelegate
-extension SearchViewController: UISearchBarDelegate {
+extension AddPlaylistSearchViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         searchWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
@@ -212,4 +201,3 @@ extension SearchViewController: UISearchBarDelegate {
         searchBar.resignFirstResponder()
     }
 }
-

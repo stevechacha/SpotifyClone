@@ -9,7 +9,7 @@ import UIKit
 
 class AddPlaylistViewController: UIViewController {
     
-    private let searcchBar = UISearchBar()
+    private let searchBar = UISearchBar()
     private let tableView = UITableView()
     private var isLoading = false
     private let loadingIndicator = UIActivityIndicatorView(style: .large)
@@ -40,16 +40,26 @@ class AddPlaylistViewController: UIViewController {
         
         setupUI()
         fetchData()
-
+        
+        
+        if selectionHandler != nil {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(
+                barButtonSystemItem: .close,
+                target: self, action: #selector(didTapClose)
+            )
+        }
+        
+    }
+    
+    @objc func didTapClose(){
+        dismiss(animated: true,completion: nil)
     }
     
     
     private func setupUI() {
         view.backgroundColor = .systemBackground
         
-        searcchBar.placeholder = "Search"
-        view.addSubview(searcchBar)
-        searcchBar.translatesAutoresizingMaskIntoConstraints = false
+        setupSearch()
         loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
         loadingIndicator.center = view.center
         loadingIndicator.startAnimating()
@@ -63,14 +73,23 @@ class AddPlaylistViewController: UIViewController {
         
         setupConstraints()
     }
+    func setupSearch(){
+        
+        searchBar.placeholder = "Search"
+        view.addSubview(searchBar)
+        searchBar.translatesAutoresizingMaskIntoConstraints = false
+        searchBar.delegate = self
+        searchBar.searchBarStyle = .minimal
+        
+    }
 
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            searcchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            searcchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            searcchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             
-            tableView.topAnchor.constraint(equalTo: searcchBar.bottomAnchor),
+            tableView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -83,7 +102,7 @@ class AddPlaylistViewController: UIViewController {
                 self?.loadingIndicator.stopAnimating()  // Stop the indicator once data is fetched
                 switch result {
                 case .success(let response):
-                    self?.recentlyPlayed = response.items
+                    self?.recentlyPlayed = response.items ?? []
                     self?.tableView.reloadData()
                 case .failure(let failure):
                     print("Recently Error\(failure)")
@@ -134,35 +153,10 @@ extension AddPlaylistViewController: UITableViewDelegate, UITableViewDataSource 
 }
 
 extension AddPlaylistViewController: UISearchBarDelegate {
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        // Use a DispatchWorkItem to debounce the search
-        searchWokItem?.cancel()  // Cancel previous work item if any
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.filterTracks(with: searchText)
-        }
-        searchWokItem = workItem
-        
-        // Delay execution of search by 0.3 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: workItem)
-    }
-
-    private func filterTracks(with searchText: String) {
-        if searchText.isEmpty {
-            fetchData() // Re-fetch data when search is cleared
-        } else {
-            recentlyPlayed = recentlyPlayed.filter {
-                $0.track?.name?.lowercased().contains(searchText.lowercased()) ?? false
-            }
-            tableView.reloadData()
-        }
-    }
-    
-    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
-        // Optionally, perform some action when the user starts editing
-    }
-    
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        searchBar.resignFirstResponder()
+    func searchBarShouldBeginEditing(_ searchBar: UISearchBar) -> Bool {
+        let addPlaylistSearch = AddPlaylistSearchViewController()
+        navigationController?.pushViewController(addPlaylistSearch, animated: true)
+        return false
     }
 }
 
@@ -204,3 +198,4 @@ extension AddPlaylistViewController: AddPlaylistTableViewCellDelegate {
     }
 
 }
+

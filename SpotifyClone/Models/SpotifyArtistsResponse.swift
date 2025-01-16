@@ -15,13 +15,13 @@ struct SpotifyArtistsDetailResponse: Codable {
     let externalUrls: ExternalUrls?
     let followers: Followers?
     let genres: [String]?
-    let href: String
-    let id: String
+    let href: String?
+    let id: String?
     let images: [APIImage]?  // Changed from 'image' to 'images' and made it an array
-    let name: String
-    let popularity: Int
-    let type: String         // Changed from 'Artist?' to 'String'
-    let uri: String
+    let name: String?
+    let popularity: Int?
+    let type: String?        // Changed from 'Artist?' to 'String'
+    let uri: String?
     let bio: String? // New field for description
 
     enum CodingKeys: String, CodingKey {

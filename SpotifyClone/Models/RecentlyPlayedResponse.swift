@@ -8,18 +8,18 @@
 import Foundation
 
 struct RecentlyPlayedResponse: Codable {
-    let href: String
-    let limit: Int
+    let href: String?
+    let limit: Int?
     let next: String?
-    let cursors: Cursors
+    let cursors: Cursors?
     let total: Int?
-    let items: [RecentlyPlayedItem]
+    let items: [RecentlyPlayedItem]?
 }
 
 
 struct RecentlyPlayedItem: Codable {
     let track: Track?
-    let playedAt: String
+    let playedAt: String?
     let context: PlayContext?
     
     enum CodingKeys: String, CodingKey {
@@ -30,8 +30,8 @@ struct RecentlyPlayedItem: Codable {
 }
 
 struct PlayContext: Codable {
-    let type: String
-    let uri: String
+    let type: String?
+    let uri: String?
 }
 
 struct Cursors: Codable {

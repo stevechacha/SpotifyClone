@@ -22,20 +22,30 @@ final class AlbumApiCaller {
     private var cachedTracks: [String: [Track]] = [:]
 
 
-   
 
     // MARK: - Get Album Details
-    func getAlbumDetails(albumID: String, completion: @escaping (Result<Album, ApiError>) -> Void) {
+    func getAlbumDetails(
+        albumID: String,
+        completion: @escaping (Result<Album, ApiError>) -> Void
+    ) {
         guard let url = URL(string: "\(Constants.albumsEndpoint)\(albumID)") else {
             completion(.failure(.invalidURL))
             return
         }
 
-        createAndExecuteRequest(with: url, type: .GET, decodingType: Album.self, completion: completion)
+        createAndExecuteRequest(
+            with: url,
+            type: .GET,
+            decodingType: Album.self,
+            completion: completion
+        )
     }
 
     // MARK: - Get Several Albums
-    func getSeveralAlbums(albumIDs: [String], completion: @escaping (Result<SpotifyAlbumResponse, ApiError>) -> Void) {
+    func getSeveralAlbums(
+        albumIDs: [String],
+        completion: @escaping (Result<SpotifyAlbumResponse, ApiError>) -> Void
+    ) {
         guard !albumIDs.isEmpty else {
             completion(.failure(.invalidURL))
             return
@@ -47,13 +57,20 @@ final class AlbumApiCaller {
             return
         }
 
-        createAndExecuteRequest(with: url, type: .GET, decodingType: SpotifyAlbumResponse.self, completion: completion)
+        createAndExecuteRequest(
+            with: url,
+            type: .GET,
+            decodingType: SpotifyAlbumResponse.self,
+            completion: completion
+        )
     }
 
 
     // MARK: - Get Albums Tracks
-    func getAllAlbumTracks(albumID: String, completion: @escaping (Result<[Track], ApiError>) -> Void) {
-        // Check if the tracks are already cached
+    func getAllAlbumTracks(
+        albumID: String,
+        completion: @escaping (Result<[Track], ApiError>) -> Void
+    ) {
         if let cached = cachedTracks[albumID] {
             completion(.success(cached))
             return
@@ -68,7 +85,11 @@ final class AlbumApiCaller {
                 return
             }
             
-            createAndExecuteRequest(with: url, type: .GET, decodingType: AlbumTracksResponse.self) { result in
+            createAndExecuteRequest(
+                with: url,
+                type: .GET,
+                decodingType: AlbumTracksResponse.self
+            ) { result in
                 switch result {
                 case .success(let response):
                     allTracks.append(contentsOf: response.items)
@@ -91,13 +112,19 @@ final class AlbumApiCaller {
     }
 
     // MARK: - Get User's Saved Albums
-    func getUserSavedAlbums(completion: @escaping (Result<SpotifyUsersAlbumSavedResponse, ApiError>) -> Void) {
+    func getUserSavedAlbums(
+        completion: @escaping (Result<SpotifyUsersAlbumSavedResponse, ApiError>) -> Void
+    ) {
         guard let url = URL(string: Constants.savedAlbumsEndpoint) else {
             completion(.failure(.invalidURL))
             return
         }
 
-        createAndExecuteRequest(with: url, type: .GET, decodingType: SpotifyUsersAlbumSavedResponse.self, completion: completion)
+        createAndExecuteRequest(
+            with: url,
+            type: .GET,
+            decodingType: SpotifyUsersAlbumSavedResponse.self,
+            completion: completion)
     }
     
 
@@ -174,7 +201,12 @@ final class AlbumApiCaller {
             return
         }
 
-        createAndExecuteRequest(with: url, type: .GET, decodingType: SpotifyNewReleasesAlbumsResponse.self, completion: completion)
+        createAndExecuteRequest(
+            with: url,
+            type: .GET,
+            decodingType: SpotifyNewReleasesAlbumsResponse.self,
+            completion: completion
+        )
     }
 
     // MARK: - Search for Albums
@@ -190,7 +222,11 @@ final class AlbumApiCaller {
             return
         }
 
-        createAndExecuteRequest(with: url, type: .GET, decodingType: SearchResponses.self) { result in
+        createAndExecuteRequest(
+            with: url,
+            type: .GET,
+            decodingType: SearchResponses.self
+        ) { result in
             switch result {
             case .success(let response):
                 completion(.success(response.albums?.items ?? []))
@@ -254,28 +290,22 @@ final class AlbumApiCaller {
                 if let httpResponse = response as? HTTPURLResponse {
                     print("Status Code: \(httpResponse.statusCode)")
                     
-                    // Handle Rate Limit Exceeded (429)
                     if httpResponse.statusCode == 429 {
                         if let retryAfterString = httpResponse.value(forHTTPHeaderField: "Retry-After"),
                            let retryAfter = Double(retryAfterString) {
                             print("Rate limit exceeded. Retrying after \(retryAfter) seconds.")
                             
-                            // Show feedback to the user that a wait is required
                             DispatchQueue.main.async {
-                                // Example of how to show a message or loading indicator
                                 let alert = UIAlertController(
                                     title: "Rate Limit Exceeded",
                                     message: "Please wait for \(Int(retryAfter)) seconds before trying again.",
                                     preferredStyle: .alert
                                 )
                                 alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                                // Present alert to the user
                                 if let viewController = self.topMostViewController() {
                                     viewController.present(alert, animated: true, completion: nil)
                                 }
                             }
-                            
-                            // Wait before retrying based on Retry-After header
                             DispatchQueue.global().asyncAfter(deadline: .now() + retryAfter) {
                                 self.createAndExecuteRequest(
                                     with: url,
@@ -288,7 +318,6 @@ final class AlbumApiCaller {
                         }
                         return
                     }
-                    
                     guard (200...299).contains(httpResponse.statusCode) else {
                         completion(.failure(.failedToGetData))
                         return
@@ -304,7 +333,6 @@ final class AlbumApiCaller {
                     let result = try JSONDecoder().decode(decodingType, from: data)
                     completion(.success(result))
                 } catch {
-                    // Log raw response for debugging
                     if let responseString = String(data: data, encoding: .utf8) {
                         print("Raw Response: \(responseString)")
                     }

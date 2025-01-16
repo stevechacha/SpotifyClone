@@ -150,7 +150,7 @@ class ProfileViewController: UIViewController {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let items):
-                    self?.recentlyPlayed = items.items
+                    self?.recentlyPlayed = items.items ?? []
                     self?.tableView.reloadData()
                 case .failure(let error):
                     print("Failed to fetch recently played: \(error)")

@@ -13,17 +13,15 @@ struct RecentPlaylistCellViewModel {
     let numberOfTracks: Int
     let artistName: String
     let objectType: String // e.g., "artist", "playlist", "album", "show"
+    let contextId: String? // The unique identifier for navigation
     
-    var tracksText: String {
-        return "\(numberOfTracks) \(numberOfTracks == 1 ? "track" : "tracks")"
-    }
-    
-    init(name: String, artUrl: URL?, numberOfTracks: Int, artistName: String, objectType: String) {
+    init(name: String, artUrl: URL?, numberOfTracks: Int, artistName: String, objectType: String, contextId: String?) {
         self.name = name
         self.artUrl = artUrl
         self.numberOfTracks = numberOfTracks
         self.artistName = artistName
         self.objectType = objectType
+        self.contextId = contextId
     }
 }
 

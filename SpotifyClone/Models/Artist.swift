@@ -22,7 +22,7 @@ struct Artist: Codable {
     let followers: Followers?
     let genres: [String]?
     let href: String?
-    let id: String
+    let id: String?
     let images: [APIImage]?
     let name: String?
     let popularity: Int?

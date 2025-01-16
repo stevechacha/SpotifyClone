@@ -155,7 +155,7 @@ class ArtistViewController: UIViewController {
             switch result {
             case .success(let details):
                 DispatchQueue.main.async {
-                    self?.artistName = details.name
+                    self?.artistName = details.name ?? ""
                     nameLabel.text = details.name
                     detailsLabel.text = self?.formatArtistDetails(details: details)
                     aboutLabel.text = details.bio ?? "No description available."
@@ -211,7 +211,7 @@ class ArtistViewController: UIViewController {
             switch result {
             case .success(let details):
                 DispatchQueue.main.async {
-                    self?.artistName = details.name
+                    self?.artistName = details.name ?? ""
                     let genres = details.genres?.joined(separator: ", ").capitalized ?? "Unknown Genres"
                     let followers = details.followers?.total ?? 0
                     let headerDetails = "Genres: \(genres)\nFollowers: \(followers)"

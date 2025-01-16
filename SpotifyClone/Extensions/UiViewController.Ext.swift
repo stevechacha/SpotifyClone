@@ -45,7 +45,6 @@ extension UIViewController {
             containerView.removeFromSuperview()
             containerView = nil
         }
-       
     }
     
     func showEmptyStateView(with message: String, in view : UIView){
