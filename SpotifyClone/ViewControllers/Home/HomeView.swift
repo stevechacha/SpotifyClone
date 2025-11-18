@@ -123,7 +123,8 @@ struct HomeView: View {
 
 struct UIKitWrapperView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController {
-        return HomeViewController()
+        let someMockSections: [BrowseSectionType] = [] // you can build some dummy sections here if needed
+        return HomeViewController(sections: someMockSections)
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}

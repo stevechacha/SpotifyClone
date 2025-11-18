@@ -12,7 +12,10 @@ class TabBarViewController: UITabBarController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let homeController = HomeViewController()
+        let someMockSections: [BrowseSectionType] = [] // you can build some dummy sections here if needed
+        let homeController = HomeViewController(sections: someMockSections)
+
+
         let searchController = CategoriesViewController()
         let libraryController = LibraryViewController()
         let profileController = ProfileViewController()

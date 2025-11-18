@@ -83,12 +83,17 @@ This is a **Spotify Clone App** built using **Swift** and **UIKit**, designed to
 
    - Create a developer account at [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
    - Create a new app and retrieve your **Client ID** and **Client Secret**.
-   - Add your redirect URI in the Spotify app settings (e.g., `spotify-clone://callback`).
-   - Update the app configuration with your credentials:
-     ```swift
-     static let clientID = "YOUR_CLIENT_ID" // Replace with your client ID
-     static let clientSecret = "YOUR_CLIENT_SECRET" // Replace with your client secret
+   - Add your redirect URI in the Spotify app settings (e.g., `http://localhost:3000/callback`).
+   - Copy the example config file and add your credentials:
+     ```bash
+     cp SpotifyClone/Config.example.plist SpotifyClone/Config.plist
      ```
+   - Open `SpotifyClone/Config.plist` and replace the placeholder values:
+     - `SpotifyClientID`: Your Spotify Client ID
+     - `SpotifyClientSecret`: Your Spotify Client Secret
+     - `SpotifyRedirectURI`: Your registered redirect URI
+   
+   **Note:** `Config.plist` is gitignored and will not be committed to the repository. Make sure to keep your credentials secure.
 
 4. Open the project in Xcode:
 

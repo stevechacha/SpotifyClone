@@ -13,10 +13,12 @@ class CategoryDetailsViewController: UIViewController {
     
     private var playlists: [PlaylistItem] = []
     private let categoryId: String
+    private let categoryName: String?
     
     // Custom initializer
-    init(categoryId: String) {
+    init(categoryId: String, categoryName: String? = nil) {
         self.categoryId = categoryId
+        self.categoryName = categoryName
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -40,7 +42,7 @@ class CategoryDetailsViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Category Playlists"
+        title = categoryName ?? "Category Playlists"
         view.backgroundColor = .systemBackground
         
         view.addSubview(collectionView)
@@ -56,17 +58,30 @@ class CategoryDetailsViewController: UIViewController {
     }
     
     private func fetchCategoryDetails() {
-        SpotifyPlayer.shared.getCategoryDetails(for: categoryId) { [weak self] result in
+        print("Fetching playlists for category ID: \(categoryId), name: \(categoryName ?? "unknown")")
+        SpotifyPlayer.shared.getCategoryDetails(for: categoryId, categoryName: categoryName) { [weak self] result in
             guard let self = self else { return }
             switch result {
-            case .success(let playlists):
-                self.playlists = playlists.items ?? []
-                print(playlists)
+            case .success(let response):
+                self.playlists = response.playlists.items ?? []
                 DispatchQueue.main.async {
-                    self.collectionView.reloadData()
+                    if self.playlists.isEmpty {
+                        self.showEmptyStateView(with: "No playlists available for this category", in: self.view)
+                    } else {
+                        self.collectionView.reloadData()
+                    }
                 }
             case .failure(let error):
-                print("Failed to fetch category details: \(error.localizedDescription)")
+                print("Failed to fetch category details for \(self.categoryName ?? self.categoryId): \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    if let apiError = error as? ApiError,
+                       case .invalidResponse(let statusCode) = apiError,
+                       statusCode == 404 {
+                        self.showEmptyStateView(with: "This category doesn't have playlists available", in: self.view)
+                    } else {
+                        self.showEmptyStateView(with: "Unable to load playlists. Please try again later.", in: self.view)
+                    }
+                }
             }
         }
     }

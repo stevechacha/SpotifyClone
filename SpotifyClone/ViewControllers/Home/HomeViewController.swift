@@ -20,10 +20,13 @@ enum BrowseSectionType {
 
 class HomeViewController: UIViewController {
     // MARK: - UI Components
-    private let collectionView: UICollectionView = {
-        let layout = UIHelper.createLayout()
-        return UICollectionView(frame: .zero, collectionViewLayout: layout)
+    
+    private lazy var collectionView: UICollectionView = {
+        let layout = UIHelper.createLayout(sections: self.sections)
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        return cv
     }()
+
     
     private let activityIndicator: UIActivityIndicatorView = {
         let indicator = UIActivityIndicatorView(style: .large)
@@ -34,6 +37,7 @@ class HomeViewController: UIViewController {
     
     private var sections = [BrowseSectionType]()
     private var filteredSections = [BrowseSectionType]()
+    
     var playlists: [PlaylistItem] = []
     var newReleases: [Album] = []
     var savedAlbums: [Album] = []
@@ -45,6 +49,16 @@ class HomeViewController: UIViewController {
     
     
     
+    // MARK: - Initializer
+    init(sections: [BrowseSectionType]) {
+        self.sections = sections
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     // MARK: - View Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -53,6 +67,8 @@ class HomeViewController: UIViewController {
         configureCollectionView()
         fetchData()
     }
+    
+    
     
     
     
@@ -89,17 +105,18 @@ class HomeViewController: UIViewController {
         collectionView.register(SectionHeaderView.self,forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,withReuseIdentifier: SectionHeaderView.identifier
         )
         
+        
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.backgroundColor = .systemBackground
     }
-   
+    
     private func fetchData() {
         activityIndicator.startAnimating()
         collectionView.isHidden = true
-
+        
         let group = DispatchGroup()
-
+        
         // Fetch Recently Played
         group.enter()
         SpotifyPlayer.shared.getRecentlyPlayed { [weak self] result in
@@ -117,7 +134,7 @@ class HomeViewController: UIViewController {
                 }
             }
         }
-
+        
         // Fetch Followed Artists and their albums
         group.enter()
         UserApiCaller.shared.getFollowedArtists { [weak self] result in
@@ -152,7 +169,7 @@ class HomeViewController: UIViewController {
                 }
             }
         }
-
+        
         // Fetch Playlists
         group.enter()
         PlaylistApiCaller.shared.getCurrentUsersPlaylist { [weak self] result in
@@ -170,7 +187,7 @@ class HomeViewController: UIViewController {
                 }
             }
         }
-
+        
         // Fetch New Releases
         group.enter()
         AlbumApiCaller.shared.getNewReleases { [weak self] result in
@@ -188,7 +205,7 @@ class HomeViewController: UIViewController {
                 }
             }
         }
-
+        
         // Fetch Top Artists
         group.enter()
         UserApiCaller.shared.getUserTopItems(type: "artists") { [weak self] result in
@@ -206,25 +223,7 @@ class HomeViewController: UIViewController {
                 }
             }
         }
-
-//        // Fetch Top Tracks
-//        group.enter()
-//        UserApiCaller.shared.getUserTopItems(type: "tracks") { [weak self] result in
-//            defer { group.leave() }
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let response):
-//                    self?.topTracks = response
-//                case .failure(let error):
-//                    self?.pressSpotyfyAlertThread(
-//                        title: "Top User Tracks Error",
-//                        message: error.localizedDescription,
-//                        buttuonTitle: "OK"
-//                    )
-//                }
-//            }
-//        }
-
+        
         group.notify(queue: .main) {
             self.activityIndicator.stopAnimating()
             self.collectionView.isHidden = false
@@ -234,7 +233,7 @@ class HomeViewController: UIViewController {
         }
     }
     
-   
+    
     private func configureRecently() {
         var recentPlaylistViewModels: [RecentPlaylistCellViewModel] = []
         
@@ -269,9 +268,9 @@ class HomeViewController: UIViewController {
         // Add to your sections
         sections.append(.recentPlaylist(viewModels: recentPlaylistViewModels))
     }
-
     
-
+    
+    
     // MARK: - Data Configuration
     private func configureModels() {
         // Playlists
@@ -307,7 +306,7 @@ class HomeViewController: UIViewController {
         sections.append(.albumsByArtistsYouFollow(viewModels: albumsByArtisYouFollowViewModels))
         
         
-
+        
         // New Releases
         let yourFavouriteArtistViewModels = yourFavouriteArtist.map {
             YourFavouriteArtistCellViewModel(
@@ -382,15 +381,15 @@ class HomeViewController: UIViewController {
             if case .topTracks = $0 { return true }
             return false
         }),
-        case .topTracks(let viewModels) = sections[sectionIndex],
-        let index = viewModels.firstIndex(where: { $0.id == trackID }) else {
+              case .topTracks(let viewModels) = sections[sectionIndex],
+              let index = viewModels.firstIndex(where: { $0.id == trackID }) else {
             return
         }
-
+        
         let indexPath = IndexPath(item: index, section: sectionIndex)
         collectionView.reloadItems(at: [indexPath])
     }
-
+    
     
     // MARK: - Filtering
     private func filterSections(for index: Int) {
@@ -408,10 +407,10 @@ class HomeViewController: UIViewController {
         }
         collectionView.reloadData()
     }
-
     
     
-
+    
+    
 }
 
 extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSource {
@@ -472,82 +471,94 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
         let type = filteredSections[indexPath.section]
         switch type {
         case .playlists(let viewModels):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: PlaylistCollectionViewCell.identifier,
-                for: indexPath
-            ) as? PlaylistCollectionViewCell else {
-                return UICollectionViewCell()
+            
+            return dequeueConfiguredCell(
+                collectionView: collectionView,
+                indexPath: indexPath,
+                cellType: PlaylistCollectionViewCell.self,
+                identifier: PlaylistCollectionViewCell.identifier,
+                viewModel: viewModels[indexPath.item]
+            ) { cell, viewModel in
+                cell.configure(with: viewModel)
             }
-            cell.configure(with: viewModels[indexPath.item])
-            return cell
             
         case .newReleases(let viewModels):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: NewReleaseCollectionViewCell.identifier,
-                for: indexPath
-            ) as? NewReleaseCollectionViewCell else {
-                return UICollectionViewCell()
+            return dequeueConfiguredCell(
+                collectionView: collectionView,
+                indexPath: indexPath,
+                cellType: NewReleaseCollectionViewCell.self,
+                identifier: NewReleaseCollectionViewCell.identifier,
+                viewModel: viewModels[indexPath.item]
+            ) { cell, viewModel in
+                cell.configure(with: viewModel)
             }
-            cell.configure(with: viewModels[indexPath.item])
-            return cell
             
         case .topArtists(let viewModels):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: TopArtistCollectionViewCell.identifier,
-                for: indexPath
-            ) as? TopArtistCollectionViewCell else {
-                return UICollectionViewCell()
+            return dequeueConfiguredCell(
+                collectionView: collectionView,
+                indexPath: indexPath,
+                cellType: TopArtistCollectionViewCell.self,
+                identifier: TopArtistCollectionViewCell.identifier,
+                viewModel: viewModels[indexPath.item]
+            ) { cell, viewModel in
+                cell.configure(with: viewModel)
             }
-            cell.configure(with: viewModels[indexPath.item])
-            return cell
+        
             
         case .topTracks(let viewModels):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: TopTrackCollectionViewCell.identifier,
-                for: indexPath
-            ) as? TopTrackCollectionViewCell else {
-                return UICollectionViewCell()
+            return dequeueConfiguredCell(
+                collectionView: collectionView,
+                indexPath: indexPath,
+                cellType: TopTrackCollectionViewCell.self,
+                identifier: TopTrackCollectionViewCell.identifier,
+                viewModel: viewModels[indexPath.item]
+            ) { cell, viewModel in
+                cell.configure(with: viewModel)
             }
-            cell.configure(with: viewModels[indexPath.item])
-            return cell
+     
         case .savedAlbums(let viewModels):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: SavedAlbumCollectionViewCell.identifier,
-                for: indexPath
-            ) as? SavedAlbumCollectionViewCell else {
-                return UICollectionViewCell()
+            return dequeueConfiguredCell(
+                collectionView: collectionView,
+                indexPath: indexPath,
+                cellType: SavedAlbumCollectionViewCell.self,
+                identifier: SavedAlbumCollectionViewCell.identifier,
+                viewModel: viewModels[indexPath.item]
+            ) { cell, viewModel in
+                cell.configure(with: viewModel)
             }
-            cell.configure(with: viewModels[indexPath.item])
-            return cell
+           
         case .recentPlaylist(let viewModels):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: RecentCollectionViewCell.identifier,
-                for: indexPath
-            ) as? RecentCollectionViewCell else {
-                return UICollectionViewCell()
+            return dequeueConfiguredCell(
+                collectionView: collectionView,
+                indexPath: indexPath,
+                cellType: RecentCollectionViewCell.self,
+                identifier: RecentCollectionViewCell.identifier,
+                viewModel: viewModels[indexPath.item]
+            ) { cell, viewModel in
+                cell.configure(with: viewModel)
             }
-            cell.configure(with: viewModels[indexPath.item])
-            return cell
             
         case .albumsByArtistsYouFollow(viewModels: let viewModels):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: AlbumsByArtistYouFollowCollectionViewCell.identifier,
-                for: indexPath
-            ) as? AlbumsByArtistYouFollowCollectionViewCell else {
-                return UICollectionViewCell()
+            return dequeueConfiguredCell(
+                collectionView: collectionView,
+                indexPath: indexPath,
+                cellType: AlbumsByArtistYouFollowCollectionViewCell.self,
+                identifier: AlbumsByArtistYouFollowCollectionViewCell.identifier,
+                viewModel: viewModels[indexPath.item]
+            ) { cell, viewModel in
+                cell.configure(with: viewModel)
             }
-            cell.configure(with: viewModels[indexPath.item])
-            return cell
+            
         case .yourFavouriteArtist(let viewModels):
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: YourFavouriteArtistsCollectionViewCell.identifier,
-                for: indexPath
-            ) as? YourFavouriteArtistsCollectionViewCell else {
-                return UICollectionViewCell()
+            return dequeueConfiguredCell(
+                collectionView: collectionView,
+                indexPath: indexPath,
+                cellType: YourFavouriteArtistsCollectionViewCell.self,
+                identifier: YourFavouriteArtistsCollectionViewCell.identifier,
+                viewModel: viewModels[indexPath.item]
+            ) { cell, viewModel in
+                cell.configure(with: viewModel)
             }
-            cell.configure(with: viewModels[indexPath.item])
-            return cell
-     
         }
     }
     
@@ -616,8 +627,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             
         case .recentPlaylist(let viewModels):
                 let selectedViewModel = viewModels[indexPath.row]
-            
-            
+    
                 guard let contextId = selectedViewModel.contextId else {
                     self.pressSpotyfyAlertThread(
                         title: "Error",
@@ -722,6 +732,25 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
     private func navigateToArtistDetail(with artistID: String){
         let artistDetailVC = ArtistViewController(artistID: artistID)
         navigationController?.pushViewController(artistDetailVC, animated: true)
+    }
+
+    
+    func dequeueConfiguredCell<T: UICollectionViewCell, VM>(
+        collectionView: UICollectionView,
+        indexPath: IndexPath,
+        cellType: T.Type,
+        identifier: String,
+        viewModel: VM,
+        configure: (T, VM) -> Void
+    ) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: identifier,
+            for: indexPath
+        ) as? T else {
+            return UICollectionViewCell()
+        }
+        configure(cell, viewModel)
+        return cell
     }
 
 }

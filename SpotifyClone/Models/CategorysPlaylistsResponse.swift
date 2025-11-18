@@ -7,9 +7,8 @@
 
 import Foundation
 
-// MARK: - PopularPlaylistsResponse
+// MARK: - Category Playlists Response
 struct CategorysPlaylistsResponse: Codable {
-    let message: String
     let playlists: Playlists
 }
 
@@ -37,12 +36,6 @@ struct SpotifyCategory {
     let id: String
     let name: String
     let imageURL: String
-}
-
-
-struct CategoryDetails: Decodable {
-  let href: String?
-  let items: [PlaylistItem]?
 }
 
 

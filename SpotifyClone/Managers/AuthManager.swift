@@ -14,12 +14,34 @@ final class AuthManager {
    
     
     // MARK: - Constants
-    
     struct Constants {
-        static let clientID = "CLIENT_ID" // Replace with your client ID
-        static let clientSecret = "CLIENT_SECRET" // Replace with your client secret
+        private static var config: [String: Any]? {
+            guard let path = Bundle.main.path(forResource: "Config", ofType: "plist"),
+                  let plist = NSDictionary(contentsOfFile: path) as? [String: Any] else {
+                fatalError("Config.plist not found. Please copy Config.example.plist to Config.plist and add your Spotify API credentials.")
+            }
+            return plist
+        }
+        
+        static var clientID: String {
+            guard let id = config?["SpotifyClientID"] as? String, !id.isEmpty else {
+                fatalError("SpotifyClientID not found in Config.plist")
+            }
+            return id
+        }
+        
+        static var clientSecret: String {
+            guard let secret = config?["SpotifyClientSecret"] as? String, !secret.isEmpty else {
+                fatalError("SpotifyClientSecret not found in Config.plist")
+            }
+            return secret
+        }
+        
         static let tokenAPIURL = "https://accounts.spotify.com/api/token"
-        static let redirectURI = "http://localhost:3000/callback" // Replace with your registered redirect URI
+        
+        static var redirectURI: String {
+            return config?["SpotifyRedirectURI"] as? String ?? "http://localhost:3000/callback"
+        }
         
         static let rawScopes = [
             "user-follow-read",

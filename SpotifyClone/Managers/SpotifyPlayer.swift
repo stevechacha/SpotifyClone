@@ -9,6 +9,11 @@ import Foundation
 
 class SpotifyPlayer {
     static let shared = SpotifyPlayer()
+    private let defaultMarket: String
+    
+    private init(locale: Locale = .current) {
+        self.defaultMarket = locale.regionCode ?? "US"
+    }
     
     func playTrack(uri: String, completion: @escaping (Result<Void, Error>) -> Void) {
         let url = URL(string: "https://api.spotify.com/v1/me/player/play")!
@@ -292,7 +297,12 @@ class SpotifyPlayer {
 
     
     func fetchCategories(completion: @escaping ([SpotifyCategory]) -> Void) {
-        guard let url = URL(string: "https://api.spotify.com/v1/browse/categories") else { return }
+        var components = URLComponents(string: "https://api.spotify.com/v1/browse/categories")
+        components?.queryItems = [
+            URLQueryItem(name: "country", value: defaultMarket),
+            URLQueryItem(name: "limit", value: "50")
+        ]
+        guard let url = components?.url else { return }
 
         AuthManager.shared.createRequest(with: url, type: .GET) { request in
             URLSession.shared.dataTask(with: request) { data, response, error in
@@ -348,17 +358,69 @@ class SpotifyPlayer {
         }
     }
     
-    func getCategoryDetails(for categoryId: String, completion: @escaping (Result<CategoryDetails, Error>) -> Void) {
-        guard let url = URL(string: "https://api.spotify.com/v1/browse/categories/\(categoryId)") else {
+    func getCategoryDetails(for categoryId: String, categoryName: String? = nil, completion: @escaping (Result<CategorysPlaylistsResponse, Error>) -> Void) {
+        print("Requesting category playlists for ID: \(categoryId) in market: \(defaultMarket)")
+        requestCategoryDetails(categoryId: categoryId, market: defaultMarket) { [weak self] result in
+            switch result {
+            case .success:
+                completion(result)
+            case .failure(let error):
+                if case ApiError.invalidResponse(let statusCode) = error,
+                   statusCode == 404,
+                   self?.defaultMarket != "US" {
+                    print("Category \(categoryId) unavailable in \(self?.defaultMarket ?? "unknown") – retrying with US market.")
+                    self?.requestCategoryDetails(categoryId: categoryId, market: "US") { retryResult in
+                        switch retryResult {
+                        case .success:
+                            completion(retryResult)
+                        case .failure:
+                            // Fallback to search by category name
+                            if let categoryName = categoryName {
+                                print("Direct endpoint failed, trying search fallback for: \(categoryName)")
+                                self?.searchPlaylistsByCategory(categoryName: categoryName, completion: completion)
+                            } else {
+                                completion(retryResult)
+                            }
+                        }
+                    }
+                } else {
+                    if case ApiError.invalidResponse(let statusCode) = error, statusCode == 404 {
+                        print("Category \(categoryId) not found or has no playlists available (even in US market)")
+                        // Fallback to search by category name
+                        if let categoryName = categoryName {
+                            print("Trying search fallback for: \(categoryName)")
+                            self?.searchPlaylistsByCategory(categoryName: categoryName, completion: completion)
+                        } else {
+                            completion(.failure(error))
+                        }
+                    } else {
+                        completion(.failure(error))
+                    }
+                }
+            }
+        }
+    }
+    
+    private func searchPlaylistsByCategory(categoryName: String, completion: @escaping (Result<CategorysPlaylistsResponse, Error>) -> Void) {
+        let encodedQuery = categoryName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? categoryName
+        guard let url = URL(string: "https://api.spotify.com/v1/search?q=\(encodedQuery)&type=playlist&limit=30") else {
             completion(.failure(ApiError.invalidURL))
             return
         }
-
+        
         AuthManager.shared.createRequest(with: url, type: .GET) { request in
-            
             URLSession.shared.dataTask(with: request) { data, response, error in
                 if let error = error {
+                    print("Search error: \(error.localizedDescription)")
                     completion(.failure(error))
+                    return
+                }
+                
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else {
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    print("Search HTTP error: \(statusCode)")
+                    completion(.failure(ApiError.failedToGetData))
                     return
                 }
                 
@@ -368,9 +430,98 @@ class SpotifyPlayer {
                 }
                 
                 do {
-                    let details = try JSONDecoder().decode(CategoryDetails.self, from: data)
+                    let searchResponse = try JSONDecoder().decode(SearchResponses.self, from: data)
+                    let playlistItems = searchResponse.playlists?.items ?? []
+                    print("Search found \(playlistItems.count) playlists for category: \(categoryName)")
+                    let playlists = Playlists(
+                        href: nil,
+                        limit: 30,
+                        next: nil,
+                        offset: 0,
+                        previous: nil,
+                        total: playlistItems.count,
+                        items: playlistItems
+                    )
+                    let categoryResponse = CategorysPlaylistsResponse(playlists: playlists)
+                    completion(.success(categoryResponse))
+                } catch {
+                    print("Error decoding search response: \(error)")
+                    if let decodingError = error as? DecodingError {
+                        switch decodingError {
+                        case .keyNotFound(let key, let context):
+                            print("Missing key: \(key.stringValue) in \(context.debugDescription)")
+                        default:
+                            break
+                        }
+                    }
+                    completion(.failure(error))
+                }
+            }.resume()
+        }
+    }
+    
+    private func requestCategoryDetails(categoryId: String, market: String?, completion: @escaping (Result<CategorysPlaylistsResponse, Error>) -> Void) {
+        var components = URLComponents(string: "https://api.spotify.com/v1/browse/categories/\(categoryId)/playlists")
+        var queryItems = [URLQueryItem(name: "limit", value: "30")]
+        if let market = market, !market.isEmpty {
+            queryItems.append(URLQueryItem(name: "country", value: market))
+        }
+        components?.queryItems = queryItems
+        
+        guard let url = components?.url else {
+            completion(.failure(ApiError.invalidURL))
+            return
+        }
+
+        AuthManager.shared.createRequest(with: url, type: .GET) { request in
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    print("Network error fetching category playlists: \(error.localizedDescription)")
+                    completion(.failure(error))
+                    return
+                }
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                
+                guard (200...299).contains(httpResponse.statusCode) else {
+                    print("HTTP error: \(httpResponse.statusCode)")
+                    completion(.failure(ApiError.invalidResponse(statusCode: httpResponse.statusCode)))
+                    return
+                }
+                
+                guard let data = data else {
+                    completion(.failure(ApiError.failedToGetData))
+                    return
+                }
+                
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Category playlists response: \(jsonString.prefix(500))")
+                }
+                
+                do {
+                    let decoder = JSONDecoder()
+                    decoder.keyDecodingStrategy = .useDefaultKeys
+                    let details = try decoder.decode(CategorysPlaylistsResponse.self, from: data)
                     completion(.success(details))
                 } catch {
+                    print("Decoding error: \(error)")
+                    if let decodingError = error as? DecodingError {
+                        switch decodingError {
+                        case .keyNotFound(let key, let context):
+                            print("Missing key: \(key.stringValue) in \(context.debugDescription)")
+                        case .typeMismatch(let type, let context):
+                            print("Type mismatch: expected \(type) in \(context.debugDescription)")
+                        case .valueNotFound(let type, let context):
+                            print("Value not found: \(type) in \(context.debugDescription)")
+                        case .dataCorrupted(let context):
+                            print("Data corrupted: \(context.debugDescription)")
+                        @unknown default:
+                            print("Unknown decoding error")
+                        }
+                    }
                     completion(.failure(error))
                 }
             }.resume()
