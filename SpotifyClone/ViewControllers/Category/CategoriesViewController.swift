@@ -98,7 +98,8 @@ class CategoriesViewController: UIViewController, UICollectionViewDelegate, UICo
     // MARK: - UICollectionViewDelegate
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let category = categories[indexPath.row]
-        let detailsVC = CategoryDetailsViewController(categoryId: category.id)
+        print("Selected category: \(category.name) (ID: \(category.id))")
+        let detailsVC = CategoryDetailsViewController(categoryId: category.id, categoryName: category.name)
         navigationController?.pushViewController(detailsVC, animated: true)
     }
 }
