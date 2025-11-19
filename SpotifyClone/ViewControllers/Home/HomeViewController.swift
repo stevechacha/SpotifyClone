@@ -227,48 +227,283 @@ class HomeViewController: UIViewController {
         group.notify(queue: .main) {
             self.activityIndicator.stopAnimating()
             self.collectionView.isHidden = false
-            self.configureModels()
+            // Configure recently played first so it appears at the top
             self.configureRecently()
+            self.configureModels()
+            // Filter sections after all sections are added
             self.filterSections(for: 0)
+            // Update layout to reflect all sections
+            self.updateCollectionViewLayout()
+            // Reload collection view to display all sections
+            self.collectionView.reloadData()
+            print("Final setup complete - sections: \(self.sections.count), filteredSections: \(self.filteredSections.count)")
         }
     }
     
     
     private func configureRecently() {
-        var recentPlaylistViewModels: [RecentPlaylistCellViewModel] = []
+        print("Configuring Recently Played - \(recentPlaylist.count) items")
+        
+        // Dictionary to group items by their context
+        var groupedItems: [String: (items: [RecentlyPlayedItem], contextType: String, name: String, imageUrl: String?, artistName: String, contextId: String?)] = [:]
+        
+        // Dictionary to store playlist IDs we need to fetch names for
+        var playlistIdsToFetch: Set<String> = []
+        
+        guard !recentPlaylist.isEmpty else {
+            print("No recently played items to display")
+            return
+        }
         
         for item in recentPlaylist {
             guard let track = item.track else { continue }
-            guard let name = track.name, let objectType = track.type else { continue }
             
-            let contextId: String?
-            switch objectType {
-            case "album":
-                contextId = track.album?.id
-            case "playlist", "show":
-                contextId = item.context?.uri
-            case "artist":
-                contextId = track.artists?.first?.id
-            default:
-                contextId = nil
+            // Determine the grouping key and metadata based on context
+            let groupKey: String
+            var contextType: String
+            var displayName: String
+            var imageUrl: String?
+            var artistName: String
+            var contextId: String?
+            
+            // Check if there's a context (album, playlist, artist, etc.)
+            if let context = item.context, let contextUri = context.uri {
+                contextType = context.type ?? "unknown"
+                
+                switch contextType {
+                case "album":
+                    // Group by album ID (more reliable than URI)
+                    groupKey = track.album?.id ?? contextUri
+                    displayName = track.album?.name ?? track.name ?? "Unknown Album"
+                    imageUrl = track.album?.images?.first?.url
+                    artistName = track.artists?.first?.name ?? "Unknown Artist"
+                    contextId = track.album?.id
+                    
+                case "playlist":
+                    // Group by playlist URI (tracks from same playlist)
+                    groupKey = contextUri
+                    // Extract playlist ID from URI (spotify:playlist:ID)
+                    let playlistId = contextUri.components(separatedBy: ":").last ?? ""
+                    contextId = playlistId
+                    
+                    // Check if we already have this playlist in our groups
+                    if let existingGroup = groupedItems[groupKey] {
+                        // Use existing group's name (already fetched or placeholder)
+                        displayName = existingGroup.name
+                        imageUrl = existingGroup.imageUrl ?? track.album?.images?.first?.url
+                        artistName = existingGroup.artistName
+                    } else {
+                        // New playlist - use placeholder for now, will fetch name later
+                        displayName = "Playlist" // Placeholder, will be updated
+                        imageUrl = track.album?.images?.first?.url
+                        artistName = "Various Artists"
+                        playlistIdsToFetch.insert(playlistId)
+                    }
+                    
+                case "artist":
+                    // Group by artist
+                    groupKey = track.artists?.first?.id ?? contextUri
+                    displayName = track.artists?.first?.name ?? "Unknown Artist"
+                    imageUrl = track.artists?.first?.images?.first?.url
+                    artistName = ""
+                    contextId = track.artists?.first?.id
+                    
+                default:
+                    // Fallback to album grouping
+                    contextType = "album"
+                    groupKey = track.album?.id ?? track.id ?? UUID().uuidString
+                    displayName = track.album?.name ?? track.name ?? "Unknown"
+                    imageUrl = track.album?.images?.first?.url
+                    artistName = track.artists?.first?.name ?? "Unknown Artist"
+                    contextId = track.album?.id
+                }
+            } else {
+                // No context - always try to group by album first
+                if let albumId = track.album?.id, !albumId.isEmpty {
+                    // Group by album ID
+                    contextType = "album"
+                    groupKey = albumId
+                    displayName = track.album?.name ?? "Unknown Album"
+                    imageUrl = track.album?.images?.first?.url
+                    artistName = track.artists?.first?.name ?? "Unknown Artist"
+                    contextId = albumId
+                } else if let artistId = track.artists?.first?.id, !artistId.isEmpty {
+                    // Fallback to artist grouping if no album
+                    contextType = "artist"
+                    groupKey = artistId
+                    displayName = track.artists?.first?.name ?? "Unknown Artist"
+                    imageUrl = track.artists?.first?.images?.first?.url
+                    artistName = ""
+                    contextId = artistId
+                } else {
+                    // Last resort - group by track ID (will show individually)
+                    contextType = "track"
+                    groupKey = track.id ?? UUID().uuidString
+                    displayName = track.name ?? "Unknown Track"
+                    imageUrl = track.album?.images?.first?.url
+                    artistName = track.artists?.first?.name ?? "Unknown Artist"
+                    contextId = track.id
+                }
             }
             
-            let viewModel = RecentPlaylistCellViewModel(
-                name: name,
-                artUrl: URL(string: track.album?.images?.first?.url ?? ""),
-                numberOfTracks: 1,
-                artistName: track.artists?.first?.name ?? "Unknown Artist",
-                objectType: objectType,
-                contextId: contextId
-            )
+            // Add to group or create new group
+            if var existingGroup = groupedItems[groupKey] {
+                // Add item to existing group, but keep the original group metadata
+                existingGroup.items.append(item)
+                groupedItems[groupKey] = existingGroup
+            } else {
+                // Create new group with this item's metadata
+                groupedItems[groupKey] = (
+                    items: [item],
+                    contextType: contextType,
+                    name: displayName,
+                    imageUrl: imageUrl,
+                    artistName: artistName,
+                    contextId: contextId
+                )
+            }
+        }
+        
+        print("Grouped \(recentPlaylist.count) items into \(groupedItems.count) groups")
+        
+        // Fetch playlist names for playlists we encountered
+        if !playlistIdsToFetch.isEmpty {
+            class PlaylistData {
+                var names: [String: String] = [:]
+                var images: [String: String] = [:]
+                let queue = DispatchQueue(label: "com.spotifyclone.playlistdata")
+            }
             
+            let playlistData = PlaylistData()
+            let dispatchGroup = DispatchGroup()
+            
+            for playlistId in playlistIdsToFetch {
+                dispatchGroup.enter()
+                PlaylistApiCaller.shared.getPlaylistDetails(playlistID: playlistId) { result in
+                    defer { dispatchGroup.leave() }
+                    switch result {
+                    case .success(let playlist):
+                        playlistData.queue.async {
+                            playlistData.names[playlistId] = playlist.name
+                            playlistData.images[playlistId] = playlist.images?.first?.url
+                        }
+                    case .failure:
+                        // Keep placeholder name if fetch fails
+                        break
+                    }
+                }
+            }
+            
+            // Wait for all playlist fetches to complete (on background queue to avoid blocking UI)
+            dispatchGroup.notify(queue: .global(qos: .userInitiated)) { [weak self, groupedItems, playlistData] in
+                guard let self = self else { return }
+                
+                // Read the final state of dictionaries
+                playlistData.queue.sync {
+                    // Create a mutable copy to update
+                    var updatedGroupedItems = groupedItems
+                    
+                    // Update grouped items with fetched playlist names
+                    for (key, var group) in updatedGroupedItems {
+                        if group.contextType == "playlist", let playlistId = group.contextId {
+                            if let fetchedName = playlistData.names[playlistId] {
+                                group.name = fetchedName
+                            }
+                            if let fetchedImage = playlistData.images[playlistId], group.imageUrl == nil {
+                                group.imageUrl = fetchedImage
+                            }
+                            updatedGroupedItems[key] = group
+                        }
+                    }
+                    
+                    // Rebuild view models with updated names
+                    self.buildRecentlyPlayedViewModels(from: updatedGroupedItems, updateUI: true)
+                }
+            }
+            
+            // For now, continue with placeholder names (will update when fetch completes)
+        }
+        
+        // Build view models from grouped items (synchronously for initial load)
+        buildRecentlyPlayedViewModels(from: groupedItems, updateUI: true)
+    }
+    
+    private func buildRecentlyPlayedViewModels(from groupedItems: [String: (items: [RecentlyPlayedItem], contextType: String, name: String, imageUrl: String?, artistName: String, contextId: String?)], updateUI: Bool = false) {
+        var recentPlaylistViewModels: [RecentPlaylistCellViewModel] = []
+        
+        for (_, group) in groupedItems {
+            let viewModel = RecentPlaylistCellViewModel(
+                name: group.name,
+                artUrl: URL(string: group.imageUrl ?? ""),
+                numberOfTracks: group.items.count,
+                artistName: group.artistName,
+                objectType: group.contextType,
+                contextId: group.contextId
+            )
             recentPlaylistViewModels.append(viewModel)
         }
         
-        // Add to your sections
-        sections.append(.recentPlaylist(viewModels: recentPlaylistViewModels))
+        // Sort by most recent (use the most recent playedAt time from each group)
+        recentPlaylistViewModels.sort { vm1, vm2 in
+            // Find the groups by matching contextId
+            let group1 = groupedItems.values.first { group in
+                group.contextId == vm1.contextId && group.name == vm1.name
+            }
+            let group2 = groupedItems.values.first { group in
+                group.contextId == vm2.contextId && group.name == vm2.name
+            }
+            
+            // Get the most recent playedAt from each group
+            let mostRecent1 = group1?.items.compactMap { $0.playedAt }.max() ?? ""
+            let mostRecent2 = group2?.items.compactMap { $0.playedAt }.max() ?? ""
+            
+            return mostRecent1 > mostRecent2 // Most recent first
+        }
+        
+        // Update or add the section
+        let updateSection = {
+            // Remove existing recentPlaylist section if it exists
+            self.sections.removeAll { section in
+                if case .recentPlaylist = section {
+                    return true
+                }
+                return false
+            }
+            // Add updated section at the beginning (top of the list)
+            if !recentPlaylistViewModels.isEmpty {
+                self.sections.insert(.recentPlaylist(viewModels: recentPlaylistViewModels), at: 0)
+                print("Added Recently Played section at top with \(recentPlaylistViewModels.count) items")
+            } else {
+                print("Recently Played section is empty - no items to display")
+            }
+            // Reload collection view if requested
+            if updateUI {
+                // Only update sections here - filterSections() will be called after all sections are configured
+                // For async updates (after playlist names are fetched), we need to update filteredSections
+                if self.sections.count > 1 {
+                    // This is an async update after initial setup - update filteredSections and layout
+                    self.filterSections(for: 0)
+                    self.updateCollectionViewLayout()
+                }
+                self.collectionView.reloadData()
+                print("Updated sections - sections now has \(self.sections.count) items, filteredSections has \(self.filteredSections.count) items")
+            }
+        }
+        
+        if Thread.isMainThread {
+            updateSection()
+        } else {
+            DispatchQueue.main.async {
+                updateSection()
+            }
+        }
     }
     
+    // MARK: - Layout Update
+    private func updateCollectionViewLayout() {
+        let newLayout = UIHelper.createLayout(sections: self.filteredSections)
+        collectionView.setCollectionViewLayout(newLayout, animated: false)
+    }
     
     
     // MARK: - Data Configuration

@@ -74,7 +74,10 @@ class SavedPlaylistTableViewCell: UITableViewCell {
         titleID.text = playlist.id
         
         if let imageUrl = playlist.images?.first?.url {
-            playlistImageView.sd_setImage(with: URL(string: imageUrl), placeholderImage: UIImage(named: "placeholder")) { [weak self] image, error, _, _ in
+            playlistImageView.sd_setImage(
+                with: URL(string: imageUrl),
+                placeholderImage: UIImage(named: "placeholder")
+            ) { [weak self] image, error, _, _ in
                 if let error = error {
                     print("Failed to load image: \(error.localizedDescription)")
                 } else {
@@ -82,8 +85,5 @@ class SavedPlaylistTableViewCell: UITableViewCell {
                 }
             }
         }
-        
-    }
-    
-   
+    } 
 }

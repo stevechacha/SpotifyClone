@@ -7,6 +7,7 @@
 
 
 import UIKit
+import SDWebImage
 class RecentCollectionViewCell: UICollectionViewCell {
     static let identifier = "RecentCollectionViewCell"
     
@@ -88,7 +89,17 @@ class RecentCollectionViewCell: UICollectionViewCell {
     public func configure(with viewModel: RecentPlaylistCellViewModel) {
         titleLabel.text = viewModel.name
         artistLabel.text = viewModel.artistName
-        tracksLabel.text = viewModel.objectType
+        
+        // Format the tracks label based on count and type
+        let trackCount = viewModel.numberOfTracks
+        let typeLabel = viewModel.objectType.capitalized
+        
+        if trackCount > 1 {
+            tracksLabel.text = "\(typeLabel) • \(trackCount) songs"
+        } else {
+            tracksLabel.text = typeLabel
+        }
+        
         // Handle image loading with placeholder
         // Use SDWebImage to load the image with caching and a placeholder
         if let url = viewModel.artUrl {
