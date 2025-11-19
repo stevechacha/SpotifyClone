@@ -20,3 +20,35 @@
 5. **Testing scaffolding** – add snapshot/unit test targets per feature plus mocks for the `SpotifyAPIClient` so business logic can be exercised without hitting the network.
 
 > Tip: once the Core/Features split is complete, consider wrapping each feature as a Swift Package. That keeps Xcode projects lean and improves compile times.
+
+## Feature Roadmap
+
+See [FEATURE_SUGGESTIONS.md](./FEATURE_SUGGESTIONS.md) for a comprehensive list of features that can be added to enhance the app, including:
+- Core music features (queue, lyrics, offline downloads)
+- Discovery & recommendations
+- Social features
+- Platform integrations (Widgets, CarPlay, Apple Watch)
+- UI/UX enhancements
+
+## Immediate Actionable Improvements
+
+### Quick Wins (1-2 days each)
+1. **Mini Player** - Add persistent mini player at bottom when music is playing
+2. **Heart/Like Button** - Add like functionality to tracks, albums, playlists
+3. **Shuffle & Repeat Controls** - Enhance player with shuffle/repeat toggles
+4. **Search Filters** - Add filter buttons (Tracks, Artists, Albums, Playlists)
+5. **Sort Options** - Add sort functionality to playlists/library
+
+### Medium Effort (3-5 days each)
+1. **Queue Management** - View and manage playback queue
+2. **Recently Played Enhancement** - Better UI and filtering for recently played
+3. **Offline Downloads** - Download playlists/albums for offline playback
+4. **Statistics Dashboard** - Show top tracks/artists/genres
+5. **Widget Support** - Home screen widgets for Now Playing
+
+### High Value Features (1-2 weeks each)
+1. **Lyrics Display** - Show lyrics for currently playing track
+2. **Enhanced Recommendations** - Daily Mix, Discover Weekly integration
+3. **Social Features** - Follow users, see friend activity
+4. **Playlist Collaboration** - Collaborative playlist editing
+5. **CarPlay Support** - Full CarPlay integration
