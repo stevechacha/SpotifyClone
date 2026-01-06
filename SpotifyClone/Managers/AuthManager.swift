@@ -15,32 +15,20 @@ final class AuthManager {
     
     // MARK: - Constants
     struct Constants {
-        private static var config: [String: Any]? {
-            guard let path = Bundle.main.path(forResource: "Config", ofType: "plist"),
-                  let plist = NSDictionary(contentsOfFile: path) as? [String: Any] else {
-                fatalError("Config.plist not found. Please copy Config.example.plist to Config.plist and add your Spotify API credentials.")
-            }
-            return plist
-        }
-        
         static var clientID: String {
-            guard let id = config?["SpotifyClientID"] as? String, !id.isEmpty else {
-                fatalError("SpotifyClientID not found in Config.plist")
-            }
-            return id
+            return AppConfiguration.Spotify.clientID
         }
         
         static var clientSecret: String {
-            guard let secret = config?["SpotifyClientSecret"] as? String, !secret.isEmpty else {
-                fatalError("SpotifyClientSecret not found in Config.plist")
-            }
-            return secret
+            return AppConfiguration.Spotify.clientSecret
         }
         
-        static let tokenAPIURL = "https://accounts.spotify.com/api/token"
+        static var tokenAPIURL: String {
+            return AppConfiguration.Spotify.tokenURL
+        }
         
         static var redirectURI: String {
-            return config?["SpotifyRedirectURI"] as? String ?? "http://localhost:3000/callback"
+            return AppConfiguration.Spotify.redirectURI
         }
         
         static let rawScopes = [
@@ -83,15 +71,15 @@ final class AuthManager {
     
     // MARK: - Variables
     public var accessToken: String? {
-        return UserDefaults.standard.string(forKey: "access_token")
+        return UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.accessToken)
     }
     
     private var refreshToken: String? {
-        return UserDefaults.standard.string(forKey: "refresh_token")
+        return UserDefaults.standard.string(forKey: AppConfiguration.UserDefaultsKeys.refreshToken)
     }
     
     private var tokenExpirationDate: Date? {
-        return UserDefaults.standard.object(forKey: "expiration_date") as? Date
+        return UserDefaults.standard.object(forKey: AppConfiguration.UserDefaultsKeys.expirationDate) as? Date
     }
     
     private var shouldRefreshToken: Bool {
@@ -231,19 +219,19 @@ final class AuthManager {
     
     // MARK: - Cache Tokens
     private func cacheToken(result: AuthResponse) {
-        UserDefaults.standard.setValue(result.access_token, forKey: "access_token")
+        UserDefaults.standard.setValue(result.access_token, forKey: AppConfiguration.UserDefaultsKeys.accessToken)
         if let refreshToken = result.refresh_token {
-            UserDefaults.standard.setValue(refreshToken, forKey: "refresh_token")
+            UserDefaults.standard.setValue(refreshToken, forKey: AppConfiguration.UserDefaultsKeys.refreshToken)
         }
         let expirationDate = Date().addingTimeInterval(TimeInterval(result.expires_in))
-        UserDefaults.standard.setValue(expirationDate, forKey: "expiration_date")
+        UserDefaults.standard.setValue(expirationDate, forKey: AppConfiguration.UserDefaultsKeys.expirationDate)
     }
     
-    // MARK: - Cache Tokens
+    // MARK: - Sign Out
     public func signOut(completion: (Bool)->Void ) {
-        UserDefaults.standard.setValue(nil, forKey: "access_token")
-        UserDefaults.standard.setValue(nil, forKey: "refresh_token")
-        UserDefaults.standard.setValue(nil, forKey: "expiration_date")
+        UserDefaults.standard.setValue(nil, forKey: AppConfiguration.UserDefaultsKeys.accessToken)
+        UserDefaults.standard.setValue(nil, forKey: AppConfiguration.UserDefaultsKeys.refreshToken)
+        UserDefaults.standard.setValue(nil, forKey: AppConfiguration.UserDefaultsKeys.expirationDate)
         
         completion(true)
     }

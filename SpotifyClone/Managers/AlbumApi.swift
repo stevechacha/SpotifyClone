@@ -5,7 +5,6 @@
 //  Created by stephen chacha on 25/12/2024.
 //
 import Foundation
-import UIKit
 
 final class AlbumApiCaller {
     static let shared = AlbumApiCaller()
@@ -251,22 +250,6 @@ final class AlbumApiCaller {
     }
     
     
-    // Helper function to get the top-most view controller
-    func topMostViewController() -> UIViewController? {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-            var topController = window.rootViewController
-            
-            while let presentedVC = topController?.presentedViewController {
-                topController = presentedVC
-            }
-            
-            return topController
-        }
-        return nil
-    }
-    
-    
     // MARK: - Helper Methods
     private func createAndExecuteRequest<T: Decodable>(
         with url: URL?,
@@ -288,24 +271,16 @@ final class AlbumApiCaller {
                 }
                 
                 if let httpResponse = response as? HTTPURLResponse {
-                    print("Status Code: \(httpResponse.statusCode)")
+                    Logger.shared.debug("HTTP Status Code: \(httpResponse.statusCode)")
                     
                     if httpResponse.statusCode == 429 {
-                        if let retryAfterString = httpResponse.value(forHTTPHeaderField: "Retry-After"),
-                           let retryAfter = Double(retryAfterString) {
-                            print("Rate limit exceeded. Retrying after \(retryAfter) seconds.")
+                        let retryAfterString = httpResponse.value(forHTTPHeaderField: "Retry-After")
+                        let error = ApiError.rateLimitExceeded(retryAfter: retryAfterString)
+                        
+                        // If retry count allows and we have retry-after header, retry automatically
+                        if retryCount > 0, let retryAfterString = retryAfterString, let retryAfter = Double(retryAfterString) {
+                            Logger.shared.warning("Rate limit exceeded. Retrying after \(retryAfter) seconds.")
                             
-                            DispatchQueue.main.async {
-                                let alert = UIAlertController(
-                                    title: "Rate Limit Exceeded",
-                                    message: "Please wait for \(Int(retryAfter)) seconds before trying again.",
-                                    preferredStyle: .alert
-                                )
-                                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                                if let viewController = self.topMostViewController() {
-                                    viewController.present(alert, animated: true, completion: nil)
-                                }
-                            }
                             DispatchQueue.global().asyncAfter(deadline: .now() + retryAfter) {
                                 self.createAndExecuteRequest(
                                     with: url,
@@ -315,6 +290,9 @@ final class AlbumApiCaller {
                                     completion: completion
                                 )
                             }
+                        } else {
+                            // No retries left or no retry-after header, return error
+                            completion(.failure(error))
                         }
                         return
                     }
@@ -324,17 +302,14 @@ final class AlbumApiCaller {
                     }
                 }
                 
-                // Debugging: Log raw data
-//                if let jsonString = String(data: data, encoding: .utf8) {
-//                    print("Response JSON: \(jsonString)")
-//                }
-//                
                 do {
                     let result = try JSONDecoder().decode(decodingType, from: data)
+                    Logger.shared.debug("Successfully decoded response")
                     completion(.success(result))
                 } catch {
                     if let responseString = String(data: data, encoding: .utf8) {
-                        print("Raw Response: \(responseString)")
+                        Logger.shared.error("Decoding error", error: error)
+                        Logger.shared.debug("Raw Response: \(responseString.prefix(500))")
                     }
                     completion(.failure(.decodingError(error.localizedDescription)))
                 }
