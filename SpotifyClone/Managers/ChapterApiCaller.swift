@@ -7,7 +7,6 @@
 
 
 import Foundation
-import UIKit
 
 final class ChapterApiCaller {
     
@@ -84,23 +83,12 @@ final class ChapterApiCaller {
                     
                     // Handle Rate Limit Exceeded (429)
                     if httpResponse.statusCode == 429 {
-                        if let retryAfterString = httpResponse.value(forHTTPHeaderField: "Retry-After"),
-                           let retryAfter = Double(retryAfterString) {
-                            print("Rate limit exceeded. Retrying after \(retryAfter) seconds.")
-                            
-                            // Show feedback to the user that a wait is required
-                            DispatchQueue.main.async {
-                                let alert = UIAlertController(
-                                    title: "Rate Limit Exceeded",
-                                    message: "Please wait for \(Int(retryAfter)) seconds before trying again.",
-                                    preferredStyle: .alert
-                                )
-                                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                                // Present alert to the user
-                                if let viewController = self.topMostViewController() {
-                                    viewController.present(alert, animated: true, completion: nil)
-                                }
-                            }
+                        let retryAfterString = httpResponse.value(forHTTPHeaderField: "Retry-After")
+                        let error = ApiError.rateLimitExceeded(retryAfter: retryAfterString)
+                        
+                        // If retry count allows and we have retry-after header, retry automatically
+                        if retryCount > 0, let retryAfterString = retryAfterString, let retryAfter = Double(retryAfterString) {
+                            Logger.shared.warning("Rate limit exceeded. Retrying after \(retryAfter) seconds.")
                             
                             // Wait before retrying based on Retry-After header
                             DispatchQueue.global().asyncAfter(deadline: .now() + retryAfter) {
@@ -112,6 +100,9 @@ final class ChapterApiCaller {
                                     completion: completion
                                 )
                             }
+                        } else {
+                            // No retries left or no retry-after header, return error
+                            completion(.failure(error))
                         }
                         return
                     }
@@ -122,18 +113,15 @@ final class ChapterApiCaller {
                     }
                 }
                 
-                // Debugging: Log raw data
-                if let jsonString = String(data: data, encoding: .utf8) {
-                    print("Response JSON: \(jsonString)")
-                }
-                
                 do {
                     let result = try JSONDecoder().decode(responseType, from: data)
+                    Logger.shared.debug("Successfully decoded response for endpoint: \(endpoint)")
                     completion(.success(result))
                 } catch {
                     // Log raw response for debugging
                     if let responseString = String(data: data, encoding: .utf8) {
-                        print("Raw Response: \(responseString)")
+                        Logger.shared.error("Decoding error for endpoint: \(endpoint)", error: error)
+                        Logger.shared.debug("Raw Response: \(responseString.prefix(500))")
                     }
                     completion(.failure(ApiError.decodingError(error.localizedDescription)))
                 }
@@ -141,23 +129,6 @@ final class ChapterApiCaller {
             task.resume()
         }
     }
-    
-    // Helper function to get the top-most view controller
-    func topMostViewController() -> UIViewController? {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first(where: { $0.isKeyWindow }) {
-            var topController = window.rootViewController
-            
-            while let presentedVC = topController?.presentedViewController {
-                topController = presentedVC
-            }
-            
-            return topController
-        }
-        return nil
-    }
-    
-    
     
     // MARK: - Fetch Shows
     public func getSeveralShows(
